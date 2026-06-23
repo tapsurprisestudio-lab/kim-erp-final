@@ -3,31 +3,35 @@ import { Activity, BadgeDollarSign, Building2, CreditCard, FileText, Headphones,
 import { AppShell } from "@/components/app/shell";
 import { SectionHeader } from "@/components/app/section-header";
 import { Card, CardContent } from "@/components/ui/card";
+import { normalizeLocale, t, type TranslationKey } from "@/lib/i18n";
+import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
 
 const links = [
-  { href: "/erp/suppliers", label: "Suppliers", icon: Building2 },
-  { href: "/erp/products", label: "Products", icon: Package },
-  { href: "/erp/categories", label: "Categories", icon: Tags },
-  { href: "/erp/stock-movements", label: "Stock Movements", icon: Activity },
-  { href: "/erp/quotations", label: "Quotations", icon: FileText },
-  { href: "/erp/invoices", label: "Invoices", icon: Receipt },
-  { href: "/erp/receipts", label: "Receipts", icon: FileText },
-  { href: "/erp/expenses", label: "Expenses", icon: CreditCard },
-  { href: "/erp/accounting", label: "Accounting", icon: BadgeDollarSign },
-  { href: "/erp/taxes", label: "Taxes", icon: BadgeDollarSign },
-  { href: "/erp/documents", label: "Documents", icon: FileText },
-  { href: "/erp/support", label: "Help / Support", icon: Headphones }
+  { href: "/erp/suppliers", labelKey: "suppliers", icon: Building2 },
+  { href: "/erp/products", labelKey: "products", icon: Package },
+  { href: "/erp/categories", labelKey: "categories", icon: Tags },
+  { href: "/erp/stock-movements", labelKey: "stockMovements", icon: Activity },
+  { href: "/erp/quotations", labelKey: "quotations", icon: FileText },
+  { href: "/erp/invoices", labelKey: "invoices", icon: Receipt },
+  { href: "/erp/receipts", labelKey: "receipts", icon: FileText },
+  { href: "/erp/expenses", labelKey: "expenses", icon: CreditCard },
+  { href: "/erp/accounting", labelKey: "accounting", icon: BadgeDollarSign },
+  { href: "/erp/taxes", labelKey: "taxes", icon: BadgeDollarSign },
+  { href: "/erp/documents", labelKey: "documents", icon: FileText },
+  { href: "/erp/support", labelKey: "helpSupport", icon: Headphones }
 ];
 
 export default async function MorePage() {
-  const { session } = await requireTenant();
+  const { session, companyId } = await requireTenant();
+  const company = await prisma.company.findUnique({ where: { id: companyId }, select: { defaultLanguage: true } });
+  const locale = normalizeLocale(company?.defaultLanguage);
   return (
     <AppShell userName={session.user.name} scope="tenant">
       <div className="space-y-6">
-        <SectionHeader title="More" description="Additional ERP modules for this company." icon={Settings} />
+        <SectionHeader title={t(locale, "more")} description={t(locale, "additionalErpModules")} icon={Settings} />
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {links.map((link) => {
             const Icon = link.icon;
@@ -38,7 +42,7 @@ export default async function MorePage() {
                     <div className="grid size-10 place-items-center rounded-xl bg-blue-50 text-primary">
                       <Icon className="size-5" />
                     </div>
-                    <span className="font-semibold text-slate-800">{link.label}</span>
+                    <span className="font-semibold text-slate-800">{t(locale, link.labelKey as TranslationKey)}</span>
                   </CardContent>
                 </Card>
               </Link>

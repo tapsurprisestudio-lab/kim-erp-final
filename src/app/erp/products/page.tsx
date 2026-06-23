@@ -13,14 +13,15 @@ export const dynamic = "force-dynamic";
 
 export default async function ProductsPage() {
   const { session, companyId } = await requireTenantPermission("products.manage");
-  const [products, categories] = await Promise.all([
+  const [products, categories, warehouses] = await Promise.all([
     prisma.product.findMany({
       where: { companyId, deletedAt: null },
       orderBy: { createdAt: "desc" },
       include: { category: true, inventoryItems: true },
       take: 100
     }),
-    prisma.category.findMany({ where: { companyId, deletedAt: null }, orderBy: { name: "asc" } })
+    prisma.category.findMany({ where: { companyId, deletedAt: null }, orderBy: { name: "asc" } }),
+    prisma.warehouse.findMany({ where: { companyId, deletedAt: null, active: true }, orderBy: { name: "asc" } })
   ]);
 
   return (
@@ -33,6 +34,7 @@ export default async function ProductsPage() {
         <CardContent>
           <form action={createProductAction} className="grid gap-3 lg:grid-cols-4">
             <Input name="sku" placeholder="SKU / code (optional)" />
+            <Input name="barcode" placeholder="Barcode (optional)" />
             <Input name="name" placeholder="iPhone 15 Pro" required />
             <select name="categoryId" className="h-10 rounded-lg border border-input bg-white px-3 text-sm">
               <option value="">No category</option>
@@ -42,11 +44,29 @@ export default async function ProductsPage() {
                 </option>
               ))}
             </select>
+            <Input name="brand" placeholder="Brand (optional)" />
+            <Input name="model" placeholder="Model (optional)" />
             <Input name="unit" placeholder="Unit (optional)" />
             <Input name="price" type="number" step="0.01" placeholder="Sale price (optional)" />
             <Input name="cost" type="number" step="0.01" placeholder="Purchase price (optional)" />
             <Input name="taxRate" type="number" step="0.01" placeholder="Tax % (optional)" />
-            <Input name="description" placeholder="Description" />
+            <Input name="stockQuantity" type="number" step="0.001" placeholder="Opening stock (optional)" />
+            <select name="warehouseId" className="h-10 rounded-lg border border-input bg-white px-3 text-sm">
+              <option value="">No opening warehouse</option>
+              {warehouses.map((warehouse) => (
+                <option key={warehouse.id} value={warehouse.id}>
+                  {warehouse.name}
+                </option>
+              ))}
+            </select>
+            <Input name="expiryDate" type="date" placeholder="Expiry date" />
+            <Input name="serialNumber" placeholder="Serial number (optional)" />
+            <Input name="imei" placeholder="IMEI (optional)" />
+            <Input name="color" placeholder="Color (optional)" />
+            <Input name="size" placeholder="Size (optional)" />
+            <Input name="imageUrl" placeholder="Image URL (optional)" />
+            <Input name="specs" placeholder="Specs (optional)" />
+            <Input name="description" placeholder="Description (optional)" />
             <div className="lg:col-span-4">
               <Button type="submit">
                 <Plus className="size-4" />
@@ -99,6 +119,15 @@ export default async function ProductsPage() {
                         </select>
                         <Input name="unit" defaultValue={product.unit} className="h-9" />
                         <Input name="price" type="number" step="0.01" defaultValue={product.price.toString()} className="h-9" />
+                        <input type="hidden" name="barcode" value={product.barcode ?? ""} />
+                        <input type="hidden" name="brand" value={product.brand ?? ""} />
+                        <input type="hidden" name="model" value={product.model ?? ""} />
+                        <input type="hidden" name="imageUrl" value={product.imageUrl ?? ""} />
+                        <input type="hidden" name="expiryDate" value={product.expiryDate?.toISOString().slice(0, 10) ?? ""} />
+                        <input type="hidden" name="serialNumber" value={product.serialNumber ?? ""} />
+                        <input type="hidden" name="imei" value={product.imei ?? ""} />
+                        <input type="hidden" name="color" value={product.color ?? ""} />
+                        <input type="hidden" name="size" value={product.size ?? ""} />
                         <input type="hidden" name="cost" value={product.cost.toString()} />
                         <input type="hidden" name="taxRate" value={product.taxRate.toString()} />
                         <input type="hidden" name="description" value={product.description ?? ""} />

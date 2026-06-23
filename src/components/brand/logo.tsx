@@ -1,7 +1,7 @@
 import { Hexagon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function Logo({ compact = false, className }: { compact?: boolean; className?: string }) {
+export function Logo({ compact = false, className, subtitle = "Business Platform" }: { compact?: boolean; className?: string; subtitle?: string }) {
   return (
     <div className={cn("flex items-center gap-3", className)}>
       <div className="kim-logo-mark relative">
@@ -13,7 +13,7 @@ export function Logo({ compact = false, className }: { compact?: boolean; classN
           <div className="text-base font-black tracking-normal text-slate-950">
             KIM-<span className="text-primary">ERB</span>
           </div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Super Admin</div>
+          <div className="text-[10px] font-semibold uppercase tracking-normal text-slate-400">{subtitle}</div>
         </div>
       )}
     </div>

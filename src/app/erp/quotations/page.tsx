@@ -1,9 +1,11 @@
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, Download } from "lucide-react";
+import Link from "next/link";
 import { AppShell } from "@/components/app/shell";
 import { DataTable } from "@/components/app/data-table";
 import { MetricGrid } from "@/components/app/metric-grid";
 import { SectionHeader } from "@/components/app/section-header";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
 import { formatMoney } from "@/lib/utils";
@@ -32,7 +34,7 @@ export default async function QuotationsPage() {
           ]}
         />
         <DataTable
-          headers={["Number", "Customer", "Issue Date", "Expires", "Total", "Status", "Lines"]}
+          headers={["Number", "Customer", "Issue Date", "Expires", "Total", "Status", "Lines", "PDF"]}
           rows={quotations.map((quotation) => [
             quotation.number,
             quotation.customer?.name ?? "-",
@@ -42,7 +44,13 @@ export default async function QuotationsPage() {
             <Badge key="status" variant={quotation.status === "SENT" ? "success" : "secondary"}>
               {quotation.status}
             </Badge>,
-            quotation._count.items.toLocaleString()
+            quotation._count.items.toLocaleString(),
+            <Button key="pdf" size="sm" variant="outline" asChild>
+              <Link href={`/api/erp/quotations/${quotation.id}/pdf`}>
+                <Download className="size-4" />
+                PDF
+              </Link>
+            </Button>
           ])}
         />
       </div>

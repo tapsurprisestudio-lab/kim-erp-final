@@ -28,6 +28,9 @@ export default async function TenantSettingsPage() {
       logoUrl: true,
       primaryColor: true,
       accentColor: true,
+      theme: true,
+      invoiceLogoUrl: true,
+      invoiceFooter: true,
       defaultCurrency: true,
       defaultLanguage: true,
       status: true,
@@ -61,11 +64,11 @@ export default async function TenantSettingsPage() {
                 <Input name="country" defaultValue={company.country ?? ""} placeholder="Country" />
                 <Input name="address" defaultValue={company.address ?? ""} placeholder="Address" />
                 <Input name="logoUrl" defaultValue={company.logoUrl ?? ""} placeholder="Company logo URL" />
-                <Input name="invoiceLogoUrl" defaultValue="" placeholder="Invoice logo URL" />
-                <Input name="invoiceFooter" defaultValue="" placeholder="Invoice footer text" />
+                <Input name="invoiceLogoUrl" defaultValue={company.invoiceLogoUrl ?? ""} placeholder="Invoice logo URL" />
+                <Input name="invoiceFooter" defaultValue={company.invoiceFooter ?? ""} placeholder="Invoice footer text" />
                 <Input name="primaryColor" type="color" defaultValue={company.primaryColor} required />
                 <Input name="accentColor" type="color" defaultValue={company.accentColor} required />
-                <select name="theme" defaultValue="light" className="h-10 rounded-lg border border-input bg-white px-3 text-sm">
+                <select name="theme" defaultValue={company.theme} className="h-10 rounded-lg border border-input bg-white px-3 text-sm">
                   <option value="light">Light</option>
                   <option value="dark">Dark</option>
                 </select>
@@ -83,7 +86,7 @@ export default async function TenantSettingsPage() {
               { label: "Owner", value: company.owner?.email ?? "-" },
               { label: "Default currency", value: company.defaultCurrency },
               { label: "Default language", value: company.defaultLanguage },
-              { label: "Theme", value: "light" }
+              { label: "Theme", value: company.theme }
             ]}
           />
         </div>

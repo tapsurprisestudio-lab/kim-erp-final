@@ -1,8 +1,10 @@
-import { BarChart3, Boxes, FileText, Users } from "lucide-react";
+import { BarChart3, Boxes, Download, FileText, Users } from "lucide-react";
+import Link from "next/link";
 import { AppShell } from "@/components/app/shell";
 import { DataTable } from "@/components/app/data-table";
 import { MetricGrid } from "@/components/app/metric-grid";
 import { SectionHeader } from "@/components/app/section-header";
+import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
 import { formatMoney } from "@/lib/utils";
@@ -20,10 +22,10 @@ export default async function ReportsPage() {
     prisma.expense.aggregate({ where: { companyId, deletedAt: null }, _sum: { amount: true }, _count: true })
   ]);
   const reports = [
-    { name: "Revenue report", metric: formatMoney(Number(invoices._sum.total ?? 0), company.defaultCurrency), records: invoices._count },
-    { name: "Inventory report", metric: Number(inventory._sum.quantity ?? 0).toLocaleString(), records: inventory._count },
-    { name: "Customer report", metric: customers.toLocaleString(), records: customers },
-    { name: "Expense report", metric: formatMoney(Number(expenses._sum.amount ?? 0), company.defaultCurrency), records: expenses._count }
+    { name: "Sales report", metric: formatMoney(Number(invoices._sum.total ?? 0), company.defaultCurrency), records: invoices._count, href: "/api/erp/reports/sales/pdf" },
+    { name: "Inventory report", metric: Number(inventory._sum.quantity ?? 0).toLocaleString(), records: inventory._count, href: "/api/erp/reports/inventory/pdf" },
+    { name: "Customer report", metric: customers.toLocaleString(), records: customers, href: null },
+    { name: "Expense report", metric: formatMoney(Number(expenses._sum.amount ?? 0), company.defaultCurrency), records: expenses._count, href: null }
   ];
 
   return (
@@ -39,8 +41,20 @@ export default async function ReportsPage() {
           ]}
         />
         <DataTable
-          headers={["Report", "Primary Metric", "Records"]}
-          rows={reports.map((report) => [report.name, report.metric, report.records.toLocaleString()])}
+          headers={["Report", "Primary Metric", "Records", "PDF"]}
+          rows={reports.map((report) => [
+            report.name,
+            report.metric,
+            report.records.toLocaleString(),
+            report.href ? (
+              <Button key="pdf" size="sm" variant="outline" asChild>
+                <Link href={report.href}>
+                  <Download className="size-4" />
+                  PDF
+                </Link>
+              </Button>
+            ) : "-"
+          ])}
         />
       </div>
     </AppShell>

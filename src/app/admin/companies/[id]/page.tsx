@@ -61,6 +61,18 @@ export default async function CompanyDetailsPage({
               Download company PDF
             </Link>
           </Button>
+          <Button variant="outline" asChild>
+            <Link href={`/admin/companies/${company.id}/subscription-print`}>
+              <Printer className="size-4" />
+              Print subscription
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href={`/api/admin/companies/${company.id}/subscription-pdf`}>
+              <Download className="size-4" />
+              Download subscription PDF
+            </Link>
+          </Button>
         </div>
       </SectionHeader>
       {(query.created || query.resent) && (

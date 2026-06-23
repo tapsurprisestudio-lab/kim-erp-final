@@ -1,8 +1,10 @@
-import { ReceiptText } from "lucide-react";
+import { Download, ReceiptText } from "lucide-react";
+import Link from "next/link";
 import { AppShell } from "@/components/app/shell";
 import { DataTable } from "@/components/app/data-table";
 import { MetricGrid } from "@/components/app/metric-grid";
 import { SectionHeader } from "@/components/app/section-header";
+import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
 import { formatMoney } from "@/lib/utils";
@@ -27,13 +29,19 @@ export default async function ReceiptsPage() {
           { label: "Customers", value: new Set(receipts.map((receipt) => receipt.customerId).filter(Boolean)).size.toLocaleString(), icon: ReceiptText, detail: "Receipt recipients" }
         ]} />
         <DataTable
-          headers={["Number", "Customer", "Invoice", "Amount", "Issued"]}
+          headers={["Number", "Customer", "Invoice", "Amount", "Issued", "PDF"]}
           rows={receipts.map((receipt) => [
             receipt.number,
             receipt.customer?.name ?? "-",
             receipt.invoice?.number ?? "-",
             formatMoney(Number(receipt.amount), receipt.currencyCode),
-            receipt.issuedAt.toLocaleString()
+            receipt.issuedAt.toLocaleString(),
+            <Button key="pdf" size="sm" variant="outline" asChild>
+              <Link href={`/api/erp/receipts/${receipt.id}/pdf`}>
+                <Download className="size-4" />
+                PDF
+              </Link>
+            </Button>
           ])}
         />
       </div>

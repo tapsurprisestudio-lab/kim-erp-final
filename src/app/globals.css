@@ -43,6 +43,52 @@
       linear-gradient(180deg, #ffffff 0%, #f8fafc 46%, #f5f7fb 100%);
   }
 
+  .app-shell[data-theme="dark"] {
+    background:
+      radial-gradient(circle at 12% 8%, rgba(88, 141, 239, 0.18), transparent 28%),
+      linear-gradient(180deg, #0f172a 0%, #111827 48%, #020617 100%);
+  }
+
+  .app-shell[data-theme="dark"] .shell-frame {
+    background: rgba(15, 23, 42, 0.88);
+    border-color: rgba(148, 163, 184, 0.24);
+  }
+
+  .app-shell[data-theme="dark"] aside,
+  .app-shell[data-theme="dark"] header,
+  .app-shell[data-theme="dark"] .rounded-2xl,
+  .app-shell[data-theme="dark"] .rounded-xl,
+  .app-shell[data-theme="dark"] .rounded-lg {
+    border-color: rgba(148, 163, 184, 0.24);
+  }
+
+  .app-shell[data-theme="dark"] .bg-white,
+  .app-shell[data-theme="dark"] .bg-white\/60,
+  .app-shell[data-theme="dark"] .bg-white\/70,
+  .app-shell[data-theme="dark"] .bg-slate-50 {
+    background-color: rgba(15, 23, 42, 0.72);
+  }
+
+  .app-shell[data-theme="dark"] .text-slate-950,
+  .app-shell[data-theme="dark"] .text-slate-900,
+  .app-shell[data-theme="dark"] .text-slate-800 {
+    color: #f8fafc;
+  }
+
+  .app-shell[data-theme="dark"] .text-slate-700,
+  .app-shell[data-theme="dark"] .text-slate-600,
+  .app-shell[data-theme="dark"] .text-slate-500 {
+    color: #cbd5e1;
+  }
+
+  .app-shell[data-theme="dark"] input,
+  .app-shell[data-theme="dark"] select,
+  .app-shell[data-theme="dark"] textarea {
+    background-color: rgba(2, 6, 23, 0.58);
+    color: #f8fafc;
+    border-color: rgba(148, 163, 184, 0.28);
+  }
+
   .kim-logo-mark {
     display: grid;
     height: 2.5rem;

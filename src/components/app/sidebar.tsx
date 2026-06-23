@@ -116,7 +116,7 @@ export function Sidebar({
           </div>
         </div>
       ) : (
-        <Logo />
+        <Logo subtitle={scope === "tenant" ? t(locale, "companyWorkspace") : t(locale, "platformAdmin")} />
       )}
       <nav className="mt-8 space-y-4">
         {groups.map((group, groupIndex) => (
@@ -151,8 +151,8 @@ export function Sidebar({
         </div>
         <p className="mt-2 leading-5">
           {scope === "tenant"
-            ? "Company-isolated operations, inventory, sales, finance, and reports."
-            : "Platform control, tenants, billing, security, support, analytics, and settings."}
+            ? t(locale, "tenantWorkspaceDescription")
+            : t(locale, "platformWorkspaceDescription")}
         </p>
       </div>
     </aside>

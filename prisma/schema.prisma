@@ -353,12 +353,22 @@ model Product {
   companyId   String
   categoryId  String?
   sku         String
+  barcode     String?
   name        String
+  brand       String?
+  model       String?
   description String?
+  imageUrl    String?
   unit        String    @default("pcs")
   price       Decimal   @db.Decimal(14, 2)
   cost        Decimal   @default(0) @db.Decimal(14, 2)
   taxRate     Decimal   @default(0) @db.Decimal(5, 2)
+  expiryDate  DateTime?
+  serialNumber String?
+  imei        String?
+  color       String?
+  size        String?
+  specs       Json?
   active      Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

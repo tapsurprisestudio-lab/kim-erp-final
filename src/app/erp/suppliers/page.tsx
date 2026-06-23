@@ -1,4 +1,5 @@
-import { Factory, Plus } from "lucide-react";
+import { Download, Factory, Plus } from "lucide-react";
+import Link from "next/link";
 import { AppShell } from "@/components/app/shell";
 import { DataTable } from "@/components/app/data-table";
 import { MetricGrid } from "@/components/app/metric-grid";
@@ -51,13 +52,19 @@ export default async function SuppliersPage() {
           </CardContent>
         </Card>
         <DataTable
-          headers={["Name", "Email", "Phone", "Tax Number", "Expenses", "Actions"]}
+          headers={["Name", "Email", "Phone", "Tax Number", "Expenses", "Statement", "Actions"]}
           rows={suppliers.map((supplier) => [
             supplier.name,
             supplier.email ?? "-",
             supplier.phone ?? "-",
             supplier.taxNumber ?? "-",
             supplier._count.expenses.toLocaleString(),
+            <Button key="statement" size="sm" variant="outline" asChild>
+              <Link href={`/api/erp/suppliers/${supplier.id}/statement-pdf`}>
+                <Download className="size-4" />
+                PDF
+              </Link>
+            </Button>,
             <form key="delete" action={deleteSupplierAction}>
               <input type="hidden" name="id" value={supplier.id} />
               <Button type="submit" size="sm" variant="outline">Delete</Button>

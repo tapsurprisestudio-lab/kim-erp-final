@@ -16,7 +16,8 @@ async function getShellCompany(companyId?: string | null) {
         name: true,
         logoUrl: true,
         defaultLanguage: true,
-        defaultCurrency: true
+        defaultCurrency: true,
+        theme: true
       }
     });
   } catch (error) {
@@ -75,11 +76,12 @@ export async function AppShell({
   const platformSettings = scope === "platform" ? await getPlatformShellSettings() : { locale: null, theme: null };
   const locale = normalizeLocale(company?.defaultLanguage ?? platformSettings.locale ?? session?.user?.locale);
   const unreadCount = await getUnreadNotificationCount(session?.user?.id, session?.user?.companyId);
-  const theme = platformSettings.theme === "dark" ? "dark" : "light";
+  const themeSource = scope === "tenant" ? company?.theme : platformSettings.theme;
+  const theme = themeSource === "dark" ? "dark" : "light";
 
   return (
     <div className="app-shell min-h-screen" dir={directionForLocale(locale)} data-theme={theme}>
-      <div className="mx-auto flex min-h-screen max-w-[1600px] overflow-hidden bg-white/60 shadow-soft lg:my-4 lg:min-h-[calc(100vh-2rem)] lg:rounded-2xl lg:border lg:border-white">
+      <div className="shell-frame mx-auto flex min-h-screen max-w-[1600px] overflow-hidden bg-white/60 shadow-soft lg:my-4 lg:min-h-[calc(100vh-2rem)] lg:rounded-2xl lg:border lg:border-white">
         <Sidebar scope={scope} locale={locale} companyName={company?.name} companyLogoUrl={company?.logoUrl} />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar

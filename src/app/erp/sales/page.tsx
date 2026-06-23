@@ -1,4 +1,5 @@
-import { Plus, TrendingUp } from "lucide-react";
+import { Download, Plus, Printer, TrendingUp } from "lucide-react";
+import Link from "next/link";
 import { AppShell } from "@/components/app/shell";
 import { DataTable } from "@/components/app/data-table";
 import { MetricGrid } from "@/components/app/metric-grid";
@@ -84,7 +85,7 @@ export default async function SalesPage() {
           </CardContent>
         </Card>
         <DataTable
-          headers={["Invoice", "Customer", "Sold Items", "Date", "Total", "Paid", "Debt", "Status"]}
+          headers={["Invoice", "Customer", "Sold Items", "Date", "Total", "Paid", "Debt", "Status", "PDF / Print"]}
           rows={invoices.map((invoice) => {
             const paid = invoice.payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
             const debt = Math.max(Number(invoice.total) - paid, 0);
@@ -98,7 +99,21 @@ export default async function SalesPage() {
               formatMoney(debt, invoice.currencyCode),
               <Badge key="status" variant={invoice.status === "PAID" ? "success" : invoice.status === "OVERDUE" ? "danger" : "secondary"}>
                 {invoice.status}
-              </Badge>
+              </Badge>,
+              <div key="actions" className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" asChild>
+                  <Link href={`/erp/invoices/${invoice.id}/print`}>
+                    <Printer className="size-4" />
+                    Print
+                  </Link>
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <Link href={`/api/erp/invoices/${invoice.id}/pdf`}>
+                    <Download className="size-4" />
+                    PDF
+                  </Link>
+                </Button>
+              </div>
             ];
           })}
         />

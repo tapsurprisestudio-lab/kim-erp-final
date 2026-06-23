@@ -1,4 +1,5 @@
-import { Plus, Users } from "lucide-react";
+import { Download, Plus, Users } from "lucide-react";
+import Link from "next/link";
 import { AppShell } from "@/components/app/shell";
 import { DataTable } from "@/components/app/data-table";
 import { MetricGrid } from "@/components/app/metric-grid";
@@ -53,13 +54,19 @@ export default async function CustomersPage() {
           </CardContent>
         </Card>
         <DataTable
-          headers={["Name", "Email", "Phone", "Location", "Documents", "Actions"]}
+          headers={["Name", "Email", "Phone", "Location", "Documents", "Statement", "Actions"]}
           rows={customers.map((customer) => [
             customer.name,
             customer.email ?? "-",
             customer.phone ?? "-",
             [customer.city, customer.country].filter(Boolean).join(", ") || "-",
             `${customer._count.invoices} invoices / ${customer._count.quotations} quotes`,
+            <Button key="statement" size="sm" variant="outline" asChild>
+              <Link href={`/api/erp/customers/${customer.id}/statement-pdf`}>
+                <Download className="size-4" />
+                PDF
+              </Link>
+            </Button>,
             <form key="delete" action={deleteCustomerAction}>
               <input type="hidden" name="id" value={customer.id} />
               <Button type="submit" size="sm" variant="outline">Delete</Button>
