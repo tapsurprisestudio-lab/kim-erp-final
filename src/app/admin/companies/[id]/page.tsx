@@ -1,0 +1,105 @@
+import { Building2, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { AppShell } from "@/components/app/shell";
+import { SectionHeader } from "@/components/app/section-header";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { softDeleteCompanyAction, updateCompanyStatusAction } from "@/app/admin/companies/[id]/actions";
+import { requireSuperAdmin } from "@/lib/auth/session";
+import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
+
+export default async function CompanyDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const session = await requireSuperAdmin();
+  const { id } = await params;
+  const company = await prisma.company.findUnique({
+    where: { id },
+    include: {
+      owner: true,
+      industry: true,
+      subscriptions: { include: { plan: true }, orderBy: { createdAt: "desc" },
+      },
+      _count: {
+        select: {
+          users: true,
+          products: true,
+          customers: true,
+          invoices: true,
+          warehouses: true
+        }
+      }
+    }
+  });
+  if (!company || company.deletedAt) notFound();
+
+  return (
+    <AppShell userName={session.user.name}>
+      <SectionHeader title={company.name} description="Tenant company profile, lifecycle, and operational footprint." icon={Building2}>
+        <Button variant="outline" asChild>
+          <Link href="/admin/companies">Back</Link>
+        </Button>
+      </SectionHeader>
+      <div className="grid gap-5 xl:grid-cols-[1fr_0.8fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Company Details</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            {[
+              ["Owner", company.owner?.name ?? "Unassigned"],
+              ["Email", company.email ?? company.owner?.email ?? "-"],
+              ["Industry", company.industry?.name ?? "-"],
+              ["Currency", company.defaultCurrency],
+              ["Language", company.defaultLanguage],
+              ["Location", [company.city, company.country].filter(Boolean).join(", ") || "-"]
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-xl bg-slate-50 p-4">
+                <div className="text-xs uppercase text-slate-400">{label}</div>
+                <div className="mt-1 font-medium text-slate-800">{value}</div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Lifecycle</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Badge variant={company.status === "ACTIVE" ? "success" : company.status === "SUSPENDED" ? "danger" : "warning"}>
+              {company.status}
+            </Badge>
+            <form action={updateCompanyStatusAction} className="flex gap-2">
+              <input type="hidden" name="id" value={company.id} />
+              <select name="status" defaultValue={company.status} className="h-10 rounded-lg border border-input bg-white px-3 text-sm">
+                <option value="TRIAL">TRIAL</option>
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="SUSPENDED">SUSPENDED</option>
+              </select>
+              <Button type="submit">Update</Button>
+            </form>
+            <form action={softDeleteCompanyAction}>
+              <input type="hidden" name="id" value={company.id} />
+              <Button type="submit" variant="destructive">
+                <Trash2 className="size-4" />
+                Soft Delete
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        {Object.entries(company._count).map(([label, value]) => (
+          <Card key={label}>
+            <CardContent className="p-5">
+              <div className="text-sm capitalize text-slate-500">{label}</div>
+              <div className="mt-2 text-2xl font-bold text-slate-950">{value}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </AppShell>
+  );
+}
