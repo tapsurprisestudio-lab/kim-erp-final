@@ -1,4 +1,4 @@
-import { Building2, Trash2 } from "lucide-react";
+import { Building2, Download, Printer, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app/shell";
@@ -45,9 +45,23 @@ export default async function CompanyDetailsPage({
   return (
     <AppShell userName={session.user.name} scope="platform">
       <SectionHeader title={company.name} description="Tenant company profile, lifecycle, and operational footprint." icon={Building2}>
-        <Button variant="outline" asChild>
-          <Link href="/admin/companies">Back</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/admin/companies">Back</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href={`/admin/companies/${company.id}/print`}>
+              <Printer className="size-4" />
+              Print company profile
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href={`/api/admin/companies/${company.id}/pdf`}>
+              <Download className="size-4" />
+              Download company PDF
+            </Link>
+          </Button>
+        </div>
       </SectionHeader>
       {(query.created || query.resent) && (
         <Card className={`mb-5 ${query.email === "skipped" ? "border-amber-200 bg-amber-50" : "border-emerald-200 bg-emerald-50"}`}>

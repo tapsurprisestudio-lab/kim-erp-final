@@ -136,3 +136,34 @@ export function directionForLocale(locale: Locale) {
 export function t(locale: Locale, key: TranslationKey) {
   return dictionaries[locale][key] ?? dictionaries.en[key];
 }
+
+const actionLabels: Record<Locale, Record<string, string>> = {
+  en: {
+    "settings.update_company": "Company settings updated",
+    "products.delete": "Product deleted",
+    "products.upsert": "Product added or updated",
+    "products.update": "Product updated",
+    "users.create": "User created",
+    "companies.create": "Company created",
+    "sales.create": "Sale created",
+    "customers.create": "Customer created",
+    "payments.create": "Payment received",
+    "stock_movements.create": "Stock movement recorded"
+  },
+  ar: {
+    "settings.update_company": "تحديث إعدادات الشركة",
+    "products.delete": "حذف منتج",
+    "products.upsert": "إضافة/تحديث منتج",
+    "products.update": "تحديث منتج",
+    "users.create": "إنشاء مستخدم",
+    "companies.create": "إنشاء شركة",
+    "sales.create": "إنشاء عملية بيع",
+    "customers.create": "إنشاء عميل",
+    "payments.create": "استلام دفعة",
+    "stock_movements.create": "تسجيل حركة مخزون"
+  }
+};
+
+export function translateAction(locale: Locale, action: string) {
+  return actionLabels[locale][action] ?? actionLabels.en[action] ?? action;
+}

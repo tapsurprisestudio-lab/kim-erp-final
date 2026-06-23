@@ -1,9 +1,11 @@
 import { FileText } from "lucide-react";
+import Link from "next/link";
 import { AppShell } from "@/components/app/shell";
 import { DataTable } from "@/components/app/data-table";
 import { MetricGrid } from "@/components/app/metric-grid";
 import { SectionHeader } from "@/components/app/section-header";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
 import { formatMoney } from "@/lib/utils";
@@ -32,7 +34,7 @@ export default async function TenantInvoicesPage() {
           ]}
         />
         <DataTable
-          headers={["Number", "Customer", "Issue Date", "Due Date", "Total", "Status", "Lines"]}
+          headers={["Number", "Customer", "Issue Date", "Due Date", "Total", "Status", "Lines", "PDF / Print"]}
           rows={invoices.map((invoice) => [
             invoice.number,
             invoice.customer?.name ?? "-",
@@ -42,7 +44,15 @@ export default async function TenantInvoicesPage() {
             <Badge key="status" variant={invoice.status === "PAID" ? "success" : invoice.status === "OVERDUE" ? "danger" : "secondary"}>
               {invoice.status}
             </Badge>,
-            `${invoice._count.items} items / ${invoice._count.payments} payments`
+            `${invoice._count.items} items / ${invoice._count.payments} payments`,
+            <div key="actions" className="flex flex-wrap gap-2">
+              <Button asChild size="sm" variant="outline">
+                <Link href={`/erp/invoices/${invoice.id}/print`}>Print</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link href={`/api/erp/invoices/${invoice.id}/pdf`}>Download PDF</Link>
+              </Button>
+            </div>
           ])}
         />
       </div>

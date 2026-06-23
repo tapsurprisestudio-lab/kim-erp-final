@@ -10,7 +10,7 @@ import { AppShell } from "@/components/app/shell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireSession } from "@/lib/auth/session";
-import { normalizeLocale, t } from "@/lib/i18n";
+import { normalizeLocale, t, translateAction } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 import { formatMoney } from "@/lib/utils";
 
@@ -35,7 +35,7 @@ async function getCompanyMetrics(companyId: string) {
       prisma.invoice.aggregate({ _sum: { total: true }, where: { companyId, deletedAt: null } }),
       prisma.inventoryItem.aggregate({ _sum: { quantity: true }, where: { deletedAt: null, product: { companyId, deletedAt: null } } }),
       prisma.auditLog.findMany({
-        where: { companyId },
+        where: { companyId, OR: [{ user: { companyId } }, { userId: null }] },
         orderBy: { createdAt: "desc" },
         take: 5,
         include: { user: true }
@@ -56,7 +56,7 @@ async function getCompanyMetrics(companyId: string) {
       users: customers,
       recentLogs: recentLogs.map((log) => ({
         id: log.id,
-        action: log.action,
+        action: translateAction(locale, log.action),
         actor: log.user?.name ?? "System",
         companyName: undefined
       }))

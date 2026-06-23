@@ -32,7 +32,7 @@ export default async function ProductsPage() {
         </CardHeader>
         <CardContent>
           <form action={createProductAction} className="grid gap-3 lg:grid-cols-4">
-            <Input name="sku" placeholder="IPH-15-PRO" required />
+            <Input name="sku" placeholder="SKU / code (optional)" />
             <Input name="name" placeholder="iPhone 15 Pro" required />
             <select name="categoryId" className="h-10 rounded-lg border border-input bg-white px-3 text-sm">
               <option value="">No category</option>
@@ -42,10 +42,10 @@ export default async function ProductsPage() {
                 </option>
               ))}
             </select>
-            <Input name="unit" placeholder="pcs" defaultValue="pcs" required />
-            <Input name="price" type="number" step="0.01" placeholder="1300" required />
-            <Input name="cost" type="number" step="0.01" placeholder="1000" defaultValue="0" />
-            <Input name="taxRate" type="number" step="0.01" placeholder="0" defaultValue="0" />
+            <Input name="unit" placeholder="Unit (optional)" />
+            <Input name="price" type="number" step="0.01" placeholder="Sale price (optional)" />
+            <Input name="cost" type="number" step="0.01" placeholder="Purchase price (optional)" />
+            <Input name="taxRate" type="number" step="0.01" placeholder="Tax % (optional)" />
             <Input name="description" placeholder="Description" />
             <div className="lg:col-span-4">
               <Button type="submit">
