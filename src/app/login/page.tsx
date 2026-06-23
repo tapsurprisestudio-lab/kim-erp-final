@@ -1,8 +1,17 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { Logo } from "@/components/brand/logo";
 import { LoginForm } from "@/app/login/login-form";
+import { auth } from "@/auth";
 
-export default function LoginPage() {
+export const dynamic = "force-dynamic";
+
+export default async function LoginPage() {
+  const session = await auth();
+  if (session?.user?.id) {
+    redirect("/dashboard");
+  }
+
   return (
     <main className="app-shell grid min-h-screen place-items-center px-4 py-10">
       <section className="grid w-full max-w-5xl overflow-hidden rounded-2xl border border-white bg-white shadow-soft lg:grid-cols-[1fr_0.9fr]">

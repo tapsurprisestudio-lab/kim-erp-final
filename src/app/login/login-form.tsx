@@ -36,7 +36,9 @@ export function LoginForm() {
             return;
           }
 
-          router.push((params.get("callbackUrl") ?? "/dashboard") as Route);
+          const callbackUrl = params.get("callbackUrl");
+          const nextPath = callbackUrl?.startsWith("/") ? callbackUrl : "/dashboard";
+          router.replace(nextPath as Route);
           router.refresh();
         });
       }}
