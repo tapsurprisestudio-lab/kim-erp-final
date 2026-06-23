@@ -5,6 +5,46 @@ import { auth } from "@/auth";
 import { directionForLocale, normalizeLocale } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 
+async function getShellCompany(companyId?: string | null) {
+  if (!companyId) {
+    return null;
+  }
+  try {
+    return await prisma.company.findUnique({
+      where: { id: companyId },
+      select: {
+        name: true,
+        logoUrl: true,
+        defaultLanguage: true,
+        defaultCurrency: true
+      }
+    });
+  } catch (error) {
+    console.error("[app-shell:company-load-failed]", { companyId, error });
+    return null;
+  }
+}
+
+async function getUnreadNotificationCount(userId?: string, companyId?: string | null) {
+  if (!userId) {
+    return 0;
+  }
+  try {
+    return await prisma.notification.count({
+      where: {
+        readAt: null,
+        OR: [
+          { userId },
+          ...(companyId ? [{ companyId }] : [])
+        ]
+      }
+    });
+  } catch (error) {
+    console.error("[app-shell:notifications-count-failed]", { userId, companyId, error });
+    return 0;
+  }
+}
+
 export async function AppShell({
   children,
   userName,
@@ -15,35 +55,12 @@ export async function AppShell({
   scope?: "platform" | "tenant";
 }) {
   const session = await auth();
-  const company = scope === "tenant" && session?.user?.companyId
-    ? await prisma.company.findUnique({
-        where: { id: session.user.companyId },
-        select: {
-          name: true,
-          logoUrl: true,
-          defaultLanguage: true,
-          defaultCurrency: true,
-          primaryColor: true,
-          accentColor: true,
-          theme: true
-        }
-      })
-    : null;
+  const company = scope === "tenant" ? await getShellCompany(session?.user?.companyId) : null;
   const locale = normalizeLocale(company?.defaultLanguage ?? session?.user?.locale);
-  const unreadCount = session?.user?.id
-    ? await prisma.notification.count({
-        where: {
-          readAt: null,
-          OR: [
-            { userId: session.user.id },
-            ...(session.user.companyId ? [{ companyId: session.user.companyId }] : [])
-          ]
-        }
-      })
-    : 0;
+  const unreadCount = await getUnreadNotificationCount(session?.user?.id, session?.user?.companyId);
 
   return (
-    <div className="app-shell min-h-screen" dir={directionForLocale(locale)} data-theme={company?.theme ?? "light"}>
+    <div className="app-shell min-h-screen" dir={directionForLocale(locale)} data-theme="light">
       <div className="mx-auto flex min-h-screen max-w-[1600px] overflow-hidden bg-white/60 shadow-soft lg:my-4 lg:min-h-[calc(100vh-2rem)] lg:rounded-2xl lg:border lg:border-white">
         <Sidebar scope={scope} locale={locale} companyName={company?.name} companyLogoUrl={company?.logoUrl} />
         <div className="flex min-w-0 flex-1 flex-col">

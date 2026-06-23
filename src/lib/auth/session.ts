@@ -15,7 +15,7 @@ export async function requireSession() {
 
 export async function requireSuperAdmin() {
   const session = await requireSession();
-  if (!session.user.roles.includes("super_admin")) {
+  if (!session.user.roles.includes("super_admin") && !session.user.roles.includes("platform_admin")) {
     redirect("/dashboard");
   }
   return session;
