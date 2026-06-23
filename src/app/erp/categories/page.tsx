@@ -19,7 +19,7 @@ export default async function CategoriesPage() {
   });
 
   return (
-    <AppShell userName={session.user.name}>
+    <AppShell userName={session.user.name} scope="tenant">
       <SectionHeader title="Categories" description="Organize products inside the current tenant only." icon={Tags} />
       <Card className="mb-5">
         <CardHeader>

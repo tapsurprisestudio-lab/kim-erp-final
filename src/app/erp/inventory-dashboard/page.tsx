@@ -25,7 +25,7 @@ export default async function InventoryDashboardPage() {
   const totalUnits = items.reduce((sum, item) => sum + Number(item.quantity), 0);
 
   return (
-    <AppShell userName={session.user.name}>
+    <AppShell userName={session.user.name} scope="tenant">
       <SectionHeader title="Inventory Dashboard" description="Live tenant stock health, low-stock alerts, and movement volume." icon={Boxes} />
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[

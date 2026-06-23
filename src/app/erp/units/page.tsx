@@ -19,7 +19,7 @@ export default async function UnitsPage() {
   });
 
   return (
-    <AppShell userName={session.user.name}>
+    <AppShell userName={session.user.name} scope="tenant">
       <SectionHeader title="Units" description="Manage tenant product units such as PCS, KG, box, hour, or service." icon={Ruler} />
       <Card className="mb-5">
         <CardHeader>

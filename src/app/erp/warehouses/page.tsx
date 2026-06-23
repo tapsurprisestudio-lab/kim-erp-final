@@ -20,7 +20,7 @@ export default async function WarehousesPage() {
   });
 
   return (
-    <AppShell userName={session.user.name}>
+    <AppShell userName={session.user.name} scope="tenant">
       <SectionHeader title="Warehouses" description="Manage tenant storage locations and inventory points." icon={Building2} />
       <Card className="mb-5">
         <CardHeader>

@@ -27,7 +27,7 @@ export default async function StockMovementsPage() {
   ]);
 
   return (
-    <AppShell userName={session.user.name}>
+    <AppShell userName={session.user.name} scope="tenant">
       <SectionHeader title="Stock Movements" description="Record purchases, sales, returns, transfers, and adjustments." icon={Activity} />
       <Card className="mb-5">
         <CardHeader>

@@ -24,7 +24,7 @@ export default async function ProductsPage() {
   ]);
 
   return (
-    <AppShell userName={session.user.name}>
+    <AppShell userName={session.user.name} scope="tenant">
       <SectionHeader title="Products" description="Tenant-scoped product catalog with SKU uniqueness per company." icon={Package} />
       <Card className="mb-5">
         <CardHeader>

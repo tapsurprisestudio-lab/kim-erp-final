@@ -1,15 +1,25 @@
 import Link from "next/link";
 import { Building2, FileText, Home, Settings, Users } from "lucide-react";
 
-const items = [
+const platformItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/admin/companies", label: "Companies", icon: Building2 },
-  { href: "/erp/products", label: "Products", icon: FileText },
+  { href: "/admin/billing", label: "Billing", icon: FileText },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/settings", label: "More", icon: Settings }
 ];
 
-export function MobileNav() {
+const tenantItems = [
+  { href: "/dashboard", label: "Dashboard", icon: Home },
+  { href: "/erp/products", label: "Products", icon: FileText },
+  { href: "/erp/inventory", label: "Inventory", icon: Building2 },
+  { href: "/erp/customers", label: "Customers", icon: Users },
+  { href: "/erp/settings", label: "More", icon: Settings }
+];
+
+export function MobileNav({ scope = "platform" }: { scope?: "platform" | "tenant" }) {
+  const items = scope === "tenant" ? tenantItems : platformItems;
+
   return (
     <nav className="fixed inset-x-3 bottom-3 z-30 grid grid-cols-5 rounded-2xl border border-slate-200 bg-white/95 px-2 py-2 shadow-soft backdrop-blur lg:hidden">
       {items.map((item) => {

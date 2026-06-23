@@ -25,7 +25,7 @@ export default async function InventoryPage() {
   ]);
 
   return (
-    <AppShell userName={session.user.name}>
+    <AppShell userName={session.user.name} scope="tenant">
       <SectionHeader title="Inventory" description="Set and monitor stock levels by product and warehouse." icon={Boxes} />
       <Card className="mb-5">
         <CardHeader>

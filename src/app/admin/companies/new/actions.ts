@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 import { z } from "zod";
@@ -62,6 +62,18 @@ async function nextUsername(base: string) {
   return `${clean}.${existing.length + 1}`;
 }
 
+async function createActivationToken(email: string) {
+  const token = randomBytes(32).toString("hex");
+  await prisma.verificationToken.create({
+    data: {
+      identifier: email,
+      token,
+      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3)
+    }
+  });
+  return token;
+}
+
 export async function createCompanyAction(formData: FormData) {
   const session = await requireSuperAdmin();
   const parsed = createCompanySchema.parse(Object.fromEntries(formData));
@@ -101,7 +113,7 @@ export async function createCompanyAction(formData: FormData) {
         passwordHash,
         forcePasswordReset: true,
         locale: parsed.defaultLanguage,
-        status: "ACTIVE"
+        status: "INVITED"
       }
     });
 
@@ -179,6 +191,8 @@ export async function createCompanyAction(formData: FormData) {
     currencyCode: company.defaultCurrency,
     languageCode: company.defaultLanguage
   });
+  const activationToken = await createActivationToken(owner.email);
+  const appUrl = process.env.APP_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
 
   await sendMail({
     to: owner.email,
@@ -189,8 +203,9 @@ export async function createCompanyAction(formData: FormData) {
       `Your KIM-ERB company workspace for ${company.name} is ready.`,
       `Username: ${owner.username}`,
       `Temporary password: ${temporaryPassword}`,
+      `Activation link: ${appUrl}/activate?email=${encodeURIComponent(owner.email)}&token=${activationToken}`,
       "",
-      "Please sign in and change your password immediately.",
+      "Activate your account, then sign in and change your password immediately.",
       "Support: kimerb10@gmail.com"
     ].join("\n"),
     attachments: [

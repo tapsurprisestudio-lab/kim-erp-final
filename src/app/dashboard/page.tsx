@@ -99,7 +99,7 @@ export default async function DashboardPage() {
     : await getCompanyMetrics(session.user.companyId as string);
 
   return (
-    <AppShell userName={session.user.name}>
+    <AppShell userName={session.user.name} scope={isSuperAdmin ? "platform" : "tenant"}>
       <div className="space-y-6">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
           <div>
