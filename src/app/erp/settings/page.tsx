@@ -13,12 +13,38 @@ export const dynamic = "force-dynamic";
 
 export default async function TenantSettingsPage() {
   const { session, companyId } = await requireTenant();
-  const company = await prisma.company.findUniqueOrThrow({ where: { id: companyId }, include: { industry: true, owner: true } });
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      taxNumber: true,
+      registrationNo: true,
+      city: true,
+      country: true,
+      address: true,
+      logoUrl: true,
+      primaryColor: true,
+      accentColor: true,
+      defaultCurrency: true,
+      defaultLanguage: true,
+      status: true,
+      industry: { select: { name: true } },
+      owner: { select: { email: true } }
+    }
+  });
 
   return (
     <AppShell userName={session.user.name} scope="tenant">
       <div className="space-y-6">
         <SectionHeader title="Settings" description="Tenant company profile, localization and fiscal defaults." icon={Settings} />
+        {!company ? (
+          <Card>
+            <CardContent className="p-5 text-sm text-slate-600">Company settings could not be loaded. Contact support.</CardContent>
+          </Card>
+        ) : (
         <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
           <Card>
             <CardHeader>
@@ -35,11 +61,11 @@ export default async function TenantSettingsPage() {
                 <Input name="country" defaultValue={company.country ?? ""} placeholder="Country" />
                 <Input name="address" defaultValue={company.address ?? ""} placeholder="Address" />
                 <Input name="logoUrl" defaultValue={company.logoUrl ?? ""} placeholder="Company logo URL" />
-                <Input name="invoiceLogoUrl" defaultValue={company.invoiceLogoUrl ?? ""} placeholder="Invoice logo URL" />
-                <Input name="invoiceFooter" defaultValue={company.invoiceFooter ?? ""} placeholder="Invoice footer text" />
+                <Input name="invoiceLogoUrl" defaultValue="" placeholder="Invoice logo URL" />
+                <Input name="invoiceFooter" defaultValue="" placeholder="Invoice footer text" />
                 <Input name="primaryColor" type="color" defaultValue={company.primaryColor} required />
                 <Input name="accentColor" type="color" defaultValue={company.accentColor} required />
-                <select name="theme" defaultValue={company.theme} className="h-10 rounded-lg border border-input bg-white px-3 text-sm">
+                <select name="theme" defaultValue="light" className="h-10 rounded-lg border border-input bg-white px-3 text-sm">
                   <option value="light">Light</option>
                   <option value="dark">Dark</option>
                 </select>
@@ -57,10 +83,11 @@ export default async function TenantSettingsPage() {
               { label: "Owner", value: company.owner?.email ?? "-" },
               { label: "Default currency", value: company.defaultCurrency },
               { label: "Default language", value: company.defaultLanguage },
-              { label: "Theme", value: company.theme }
+              { label: "Theme", value: "light" }
             ]}
           />
         </div>
+        )}
       </div>
     </AppShell>
   );

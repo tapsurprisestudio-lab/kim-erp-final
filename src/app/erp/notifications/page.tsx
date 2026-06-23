@@ -13,16 +13,23 @@ export const dynamic = "force-dynamic";
 
 export default async function TenantNotificationsPage() {
   const { session, companyId } = await requireTenant();
-  const notifications = await prisma.notification.findMany({
-    where: {
-      AND: [
-        { OR: [{ userId: session.user.id }, { companyId }] },
-        { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] }
-      ]
-    },
-    orderBy: { createdAt: "desc" },
-    take: 100
-  });
+  const notifications = await (async () => {
+    try {
+      return await prisma.notification.findMany({
+        where: {
+          AND: [
+            { OR: [{ userId: session.user.id }, { companyId }] },
+            { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] }
+          ]
+        },
+        orderBy: { createdAt: "desc" },
+        take: 100
+      });
+    } catch (error) {
+      console.error("[tenant-notifications:load-failed]", { companyId, userId: session.user.id, error });
+      return [];
+    }
+  })();
 
   return (
     <AppShell userName={session.user.name} scope="tenant">

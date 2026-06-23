@@ -15,9 +15,18 @@ export const dynamic = "force-dynamic";
 export default async function PlatformMessagesPage() {
   const session = await requireSuperAdmin();
   const [companies, users, messages] = await Promise.all([
-    prisma.company.findMany({ where: { deletedAt: null }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    prisma.user.findMany({ where: { deletedAt: null }, orderBy: { name: "asc" }, select: { id: true, name: true, email: true } }),
-    prisma.platformMessage.findMany({ include: { company: true }, orderBy: { createdAt: "desc" }, take: 100 })
+    prisma.company.findMany({ where: { deletedAt: null }, orderBy: { name: "asc" }, select: { id: true, name: true } }).catch((error) => {
+      console.error("[platform-messages:companies-load-failed]", error);
+      return [];
+    }),
+    prisma.user.findMany({ where: { deletedAt: null }, orderBy: { name: "asc" }, select: { id: true, name: true, email: true } }).catch((error) => {
+      console.error("[platform-messages:users-load-failed]", error);
+      return [];
+    }),
+    prisma.platformMessage.findMany({ include: { company: true }, orderBy: { createdAt: "desc" }, take: 100 }).catch((error) => {
+      console.error("[platform-messages:messages-load-failed]", error);
+      return [];
+    })
   ]);
 
   return (

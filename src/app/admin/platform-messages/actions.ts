@@ -20,13 +20,14 @@ const messageSchema = z.object({
 });
 
 export async function sendPlatformMessageAction(formData: FormData) {
-  const session = await requireSuperAdmin();
-  const parsed = messageSchema.parse(Object.fromEntries(formData));
-  const companyIds = parsed.companyIds?.split(",").map((id) => id.trim()).filter(Boolean) ?? [];
-  const actionLink = parsed.actionLink || null;
-  const expiresAt = parsed.expiresAt ?? null;
+  try {
+    const session = await requireSuperAdmin();
+    const parsed = messageSchema.parse(Object.fromEntries(formData));
+    const companyIds = parsed.companyIds?.split(",").map((id) => id.trim()).filter(Boolean) ?? [];
+    const actionLink = parsed.actionLink || null;
+    const expiresAt = parsed.expiresAt ?? null;
 
-  const targets = await (async () => {
+    const targets = await (async () => {
     if (parsed.audience === "all_companies") {
       const companies = await prisma.company.findMany({ where: { deletedAt: null }, select: { id: true, owner: true } });
       return companies.map((company) => ({ companyId: company.id, userId: null, email: company.owner?.email ?? null }));
@@ -48,46 +49,49 @@ export async function sendPlatformMessageAction(formData: FormData) {
       return user ? [{ companyId: user.companyId, userId: user.id, email: user.email }] : [];
     }
     return [];
-  })();
+    })();
 
-  for (const target of targets) {
-    const message = await prisma.platformMessage.create({
-      data: {
-        senderId: session.user.id,
+    for (const target of targets) {
+      const message = await prisma.platformMessage.create({
+        data: {
+          senderId: session.user.id,
+          companyId: target.companyId,
+          userId: target.userId,
+          audience: parsed.audience,
+          title: parsed.title,
+          body: parsed.body,
+          priority: parsed.priority,
+          actionLink,
+          expiresAt
+        }
+      });
+      await createNotification({
         companyId: target.companyId,
         userId: target.userId,
-        audience: parsed.audience,
         title: parsed.title,
         body: parsed.body,
+        type: "platform_message",
         priority: parsed.priority,
         actionLink,
         expiresAt
+      });
+      if (target.email) {
+        await sendMail({
+          to: target.email,
+          subject: parsed.title,
+          text: [parsed.body, "", actionLink ? `Action link: ${actionLink}` : "", "Message from KIM-ERB Platform."].filter(Boolean).join("\n")
+        });
       }
-    });
-    await createNotification({
-      companyId: target.companyId,
-      userId: target.userId,
-      title: parsed.title,
-      body: parsed.body,
-      type: "platform_message",
-      priority: parsed.priority,
-      actionLink,
-      expiresAt
-    });
-    if (target.email) {
-      await sendMail({
-        to: target.email,
-        subject: parsed.title,
-        text: [parsed.body, "", actionLink ? `Action link: ${actionLink}` : "", "Message from KIM-ERB Platform."].filter(Boolean).join("\n")
+      await audit("platform_messages.sent", "PlatformMessage", message.id, {
+        userId: session.user.id,
+        companyId: target.companyId ?? undefined,
+        metadata: { audience: parsed.audience, priority: parsed.priority }
       });
     }
-    await audit("platform_messages.sent", "PlatformMessage", message.id, {
-      userId: session.user.id,
-      companyId: target.companyId ?? undefined,
-      metadata: { audience: parsed.audience, priority: parsed.priority }
-    });
-  }
 
-  revalidatePath("/admin/platform-messages");
-  revalidatePath("/admin/notifications");
+    revalidatePath("/admin/platform-messages");
+    revalidatePath("/admin/notifications");
+  } catch (error) {
+    console.error("[platform-messages:send-failed]", error);
+  }
 }

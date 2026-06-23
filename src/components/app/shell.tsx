@@ -45,6 +45,22 @@ async function getUnreadNotificationCount(userId?: string, companyId?: string | 
   }
 }
 
+async function getPlatformShellSettings() {
+  try {
+    const settings = await prisma.translation.findMany({
+      where: { languageCode: "en", namespace: "platform_settings", key: { in: ["language", "theme"] } },
+      select: { key: true, value: true }
+    });
+    return {
+      locale: settings.find((item) => item.key === "language")?.value,
+      theme: settings.find((item) => item.key === "theme")?.value
+    };
+  } catch (error) {
+    console.error("[app-shell:platform-settings-load-failed]", error);
+    return { locale: null, theme: null };
+  }
+}
+
 export async function AppShell({
   children,
   userName,
@@ -56,11 +72,13 @@ export async function AppShell({
 }) {
   const session = await auth();
   const company = scope === "tenant" ? await getShellCompany(session?.user?.companyId) : null;
-  const locale = normalizeLocale(company?.defaultLanguage ?? session?.user?.locale);
+  const platformSettings = scope === "platform" ? await getPlatformShellSettings() : { locale: null, theme: null };
+  const locale = normalizeLocale(company?.defaultLanguage ?? platformSettings.locale ?? session?.user?.locale);
   const unreadCount = await getUnreadNotificationCount(session?.user?.id, session?.user?.companyId);
+  const theme = platformSettings.theme === "dark" ? "dark" : "light";
 
   return (
-    <div className="app-shell min-h-screen" dir={directionForLocale(locale)} data-theme="light">
+    <div className="app-shell min-h-screen" dir={directionForLocale(locale)} data-theme={theme}>
       <div className="mx-auto flex min-h-screen max-w-[1600px] overflow-hidden bg-white/60 shadow-soft lg:my-4 lg:min-h-[calc(100vh-2rem)] lg:rounded-2xl lg:border lg:border-white">
         <Sidebar scope={scope} locale={locale} companyName={company?.name} companyLogoUrl={company?.logoUrl} />
         <div className="flex min-w-0 flex-1 flex-col">

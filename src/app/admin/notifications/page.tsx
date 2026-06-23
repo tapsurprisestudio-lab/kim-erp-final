@@ -13,13 +13,22 @@ export default async function NotificationCenterPage() {
   const session = await requireSuperAdmin();
   const soon = new Date(Date.now() + 1000 * 60 * 60 * 24 * 14);
   const [tickets, securityLogs, expiringSubscriptions] = await Promise.all([
-    prisma.supportTicket.findMany({ include: { company: true }, orderBy: { updatedAt: "desc" }, take: 40 }),
-    prisma.securityLog.findMany({ include: { user: true, company: true }, orderBy: { createdAt: "desc" }, take: 40 }),
+    prisma.supportTicket.findMany({ include: { company: true }, orderBy: { updatedAt: "desc" }, take: 40 }).catch((error) => {
+      console.error("[admin-notifications:tickets-load-failed]", error);
+      return [];
+    }),
+    prisma.securityLog.findMany({ include: { user: true, company: true }, orderBy: { createdAt: "desc" }, take: 40 }).catch((error) => {
+      console.error("[admin-notifications:security-load-failed]", error);
+      return [];
+    }),
     prisma.subscription.findMany({
       where: { status: { in: ["ACTIVE", "TRIAL"] }, endsAt: { lte: soon } },
       include: { company: true, plan: true },
       orderBy: { endsAt: "asc" },
       take: 40
+    }).catch((error) => {
+      console.error("[admin-notifications:subscriptions-load-failed]", error);
+      return [];
     })
   ]);
   const notifications = [

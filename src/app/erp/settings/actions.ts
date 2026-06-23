@@ -28,27 +28,40 @@ const settingsSchema = z.object({
 export async function updateCompanySettingsAction(formData: FormData) {
   const { session, companyId } = await requireTenant();
   const parsed = settingsSchema.parse(Object.fromEntries(formData));
-  await prisma.company.update({
-    where: { id: companyId },
-    data: {
-      name: parsed.name,
-      email: parsed.email || null,
-      phone: parsed.phone || null,
-      taxNumber: parsed.taxNumber || null,
-      registrationNo: parsed.registrationNo || null,
-      city: parsed.city || null,
-      country: parsed.country || null,
-      address: parsed.address || null,
-      logoUrl: parsed.logoUrl || null,
-      invoiceLogoUrl: parsed.invoiceLogoUrl || null,
-      invoiceFooter: parsed.invoiceFooter || null,
-      primaryColor: parsed.primaryColor,
-      accentColor: parsed.accentColor,
-      theme: parsed.theme,
-      defaultCurrency: parsed.defaultCurrency,
-      defaultLanguage: parsed.defaultLanguage
-    }
-  });
+  const stableData = {
+    name: parsed.name,
+    email: parsed.email || null,
+    phone: parsed.phone || null,
+    taxNumber: parsed.taxNumber || null,
+    registrationNo: parsed.registrationNo || null,
+    city: parsed.city || null,
+    country: parsed.country || null,
+    address: parsed.address || null,
+    logoUrl: parsed.logoUrl || null,
+    primaryColor: parsed.primaryColor,
+    accentColor: parsed.accentColor,
+    defaultCurrency: parsed.defaultCurrency,
+    defaultLanguage: parsed.defaultLanguage
+  };
+
+  try {
+    await prisma.company.update({
+      where: { id: companyId },
+      data: {
+        ...stableData,
+        invoiceLogoUrl: parsed.invoiceLogoUrl || null,
+        invoiceFooter: parsed.invoiceFooter || null,
+        theme: parsed.theme
+      }
+    });
+  } catch (error) {
+    console.error("[tenant-settings:update-extended-fields-failed]", error);
+    await prisma.company.update({
+      where: { id: companyId },
+      data: stableData
+    });
+  }
   await audit("settings.update_company", "Company", companyId, { companyId, userId: session.user.id });
   revalidatePath("/erp/settings");
+  revalidatePath("/dashboard");
 }

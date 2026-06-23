@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/rbac";
@@ -17,7 +17,7 @@ export async function requireTenant() {
 export async function requireTenantPermission(permission: string) {
   const tenant = await requireTenant();
   if (!hasPermission(tenant.session.user.permissions, permission)) {
-    throw new Error(`Missing permission: ${permission}`);
+    redirect("/dashboard?error=permission-denied");
   }
   return tenant;
 }

@@ -19,16 +19,21 @@ export async function createNotification({
   actionLink?: string | null;
   expiresAt?: Date | null;
 }) {
-  return prisma.notification.create({
-    data: {
-      companyId: companyId ?? null,
-      userId: userId ?? null,
-      title,
-      body,
-      type,
-      priority,
-      actionLink: actionLink ?? null,
-      expiresAt: expiresAt ?? null
-    }
-  });
+  try {
+    return await prisma.notification.create({
+      data: {
+        companyId: companyId ?? null,
+        userId: userId ?? null,
+        title,
+        body,
+        type,
+        priority,
+        actionLink: actionLink ?? null,
+        expiresAt: expiresAt ?? null
+      }
+    });
+  } catch (error) {
+    console.error("[notification:create-failed]", { companyId, userId, title, error });
+    return null;
+  }
 }

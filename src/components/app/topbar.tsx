@@ -1,4 +1,4 @@
-import { Bell, Search, Settings2, Sun } from "lucide-react";
+import { Bell, Search, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { Input } from "@/components/ui/input";
@@ -39,9 +39,6 @@ export function Topbar({
         <Input className="h-10 border-0 bg-transparent shadow-none focus-visible:ring-0" placeholder={t(locale, "search")} />
       </div>
       <div className="ml-auto flex items-center gap-2">
-        <button className="grid size-10 place-items-center rounded-full text-slate-500 hover:bg-slate-100" aria-label="Theme">
-          <Sun className="size-4" strokeWidth={1.8} />
-        </button>
         <Link href={settingsHref} className="grid size-10 place-items-center rounded-full text-slate-500 hover:bg-slate-100" aria-label="Settings">
           <Settings2 className="size-4" strokeWidth={1.8} />
         </Link>
