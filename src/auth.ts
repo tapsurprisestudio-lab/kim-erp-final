@@ -106,6 +106,15 @@ export const authConfig = {
           userAgent
         });
 
+        const roles = user.roles.map((userRole) => userRole.role.key);
+        const permissions = [
+          ...new Set(
+            user.roles.flatMap((userRole) =>
+              userRole.role.permissions.map((rolePermission) => rolePermission.permission.key)
+            )
+          )
+        ];
+
         return {
           id: user.id,
           name: user.name,
@@ -113,15 +122,10 @@ export const authConfig = {
           image: user.image,
           companyId: user.companyId,
           companyName: user.company?.name,
+          role: roles[0] ?? "user",
           status: user.status,
-          roles: user.roles.map((userRole) => userRole.role.key),
-          permissions: [
-            ...new Set(
-              user.roles.flatMap((userRole) =>
-                userRole.role.permissions.map((rolePermission) => rolePermission.permission.key)
-              )
-            )
-          ]
+          roles,
+          permissions
         };
       }
     })
@@ -132,6 +136,8 @@ export const authConfig = {
         token.userId = user.id;
         token.companyId = user.companyId;
         token.companyName = user.companyName;
+        token.role = user.role;
+        token.status = user.status;
         token.roles = user.roles;
         token.permissions = user.permissions;
       }
@@ -142,6 +148,8 @@ export const authConfig = {
         session.user.id = token.userId as string;
         session.user.companyId = token.companyId as string | null;
         session.user.companyName = token.companyName as string | undefined;
+        session.user.role = token.role as string | undefined;
+        session.user.status = token.status as string | undefined;
         session.user.roles = (token.roles as string[]) ?? [];
         session.user.permissions = (token.permissions as string[]) ?? [];
       }
