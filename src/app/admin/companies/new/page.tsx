@@ -10,8 +10,13 @@ import { createCompanyAction } from "@/app/admin/companies/new/actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function NewCompanyPage() {
+export default async function NewCompanyPage({
+  searchParams
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const session = await requireSuperAdmin();
+  const query = await searchParams;
   const [industries, plans, currencies, languages] = await Promise.all([
     prisma.industry.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     prisma.plan.findMany({ where: { active: true }, orderBy: { monthlyPrice: "asc" } }),
@@ -42,6 +47,11 @@ export default async function NewCompanyPage() {
           </div>
         </CardHeader>
         <CardContent>
+          {query.error && (
+            <div className="mb-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+              {query.error}
+            </div>
+          )}
           <form action={createCompanyAction} className="grid gap-6 lg:grid-cols-[240px_1fr]" encType="multipart/form-data">
             <div className="space-y-3">
               {[

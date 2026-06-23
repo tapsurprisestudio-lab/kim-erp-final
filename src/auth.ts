@@ -126,6 +126,7 @@ export const authConfig = {
           companyName: user.company?.name,
           role: roles[0] ?? "user",
           status: user.status,
+          locale: user.locale,
           roles,
           permissions
         };
@@ -140,6 +141,7 @@ export const authConfig = {
         token.companyName = user.companyName;
         token.role = user.role;
         token.status = user.status;
+        token.locale = user.locale;
         token.roles = user.roles;
         token.permissions = user.permissions;
       }
@@ -152,6 +154,7 @@ export const authConfig = {
         session.user.companyName = token.companyName as string | undefined;
         session.user.role = token.role as string | undefined;
         session.user.status = token.status as string | undefined;
+        session.user.locale = token.locale as string | undefined;
         session.user.roles = (token.roles as string[]) ?? [];
         session.user.permissions = (token.permissions as string[]) ?? [];
       }

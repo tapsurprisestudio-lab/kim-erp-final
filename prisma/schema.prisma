@@ -78,6 +78,9 @@ model Company {
   logoUrl         String?
   primaryColor    String        @default("#2563EB")
   accentColor     String        @default("#8B5CF6")
+  theme           String        @default("light")
+  invoiceLogoUrl  String?
+  invoiceFooter   String?
   status          CompanyStatus @default(TRIAL)
   defaultCurrency String        @default("LYD")
   defaultLanguage String        @default("ar")
@@ -113,6 +116,8 @@ model Company {
   auditLogs      AuditLog[]
   securityLogs   SecurityLog[]
   supportTickets SupportTicket[]
+  notifications  Notification[]
+  platformMessages PlatformMessage[]
 
   @@index([slug])
   @@index([status])
@@ -154,6 +159,7 @@ model User {
   auditLogs       AuditLog[]
   securityLogs    SecurityLog[]
   assignedTickets SupportTicket[] @relation("TicketAssignee")
+  notifications   Notification[]
 
   @@index([companyId])
   @@index([status])
@@ -670,6 +676,47 @@ model SupportTicket {
 
   @@index([companyId])
   @@index([status])
+}
+
+model Notification {
+  id         String    @id @default(cuid())
+  companyId  String?
+  userId     String?
+  title      String
+  body       String
+  type       String    @default("info")
+  priority   String    @default("info")
+  actionLink String?
+  readAt     DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  company Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([readAt])
+}
+
+model PlatformMessage {
+  id         String   @id @default(cuid())
+  senderId   String
+  companyId  String?
+  userId     String?
+  title      String
+  body       String
+  priority   String   @default("info")
+  actionLink String?
+  audience   String   @default("company")
+  expiresAt  DateTime?
+  createdAt  DateTime @default(now())
+
+  company Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([audience])
 }
 
 model Account {

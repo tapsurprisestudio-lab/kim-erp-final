@@ -15,6 +15,12 @@ const settingsSchema = z.object({
   city: z.string().trim().optional(),
   country: z.string().trim().optional(),
   address: z.string().trim().optional(),
+  logoUrl: z.string().trim().optional(),
+  invoiceLogoUrl: z.string().trim().optional(),
+  invoiceFooter: z.string().trim().optional(),
+  primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  accentColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  theme: z.enum(["light", "dark"]),
   defaultCurrency: z.string().length(3),
   defaultLanguage: z.string().min(2)
 });
@@ -33,6 +39,12 @@ export async function updateCompanySettingsAction(formData: FormData) {
       city: parsed.city || null,
       country: parsed.country || null,
       address: parsed.address || null,
+      logoUrl: parsed.logoUrl || null,
+      invoiceLogoUrl: parsed.invoiceLogoUrl || null,
+      invoiceFooter: parsed.invoiceFooter || null,
+      primaryColor: parsed.primaryColor,
+      accentColor: parsed.accentColor,
+      theme: parsed.theme,
       defaultCurrency: parsed.defaultCurrency,
       defaultLanguage: parsed.defaultLanguage
     }

@@ -1,23 +1,25 @@
 import Link from "next/link";
-import { Building2, FileText, Home, Settings, Users } from "lucide-react";
+import { Boxes, Building2, Home, Receipt, Settings, Users } from "lucide-react";
+import type { Locale, TranslationKey } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 
 const platformItems = [
-  { href: "/dashboard", label: "Dashboard", icon: Home },
-  { href: "/admin/companies", label: "Companies", icon: Building2 },
-  { href: "/admin/billing", label: "Billing", icon: FileText },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/settings", label: "More", icon: Settings }
+  { href: "/dashboard", labelKey: "platformDashboard", icon: Home },
+  { href: "/admin/companies", labelKey: "companies", icon: Building2 },
+  { href: "/admin/billing", labelKey: "billing", icon: Receipt },
+  { href: "/admin/users", labelKey: "users", icon: Users },
+  { href: "/admin/settings", labelKey: "more", icon: Settings }
 ];
 
 const tenantItems = [
-  { href: "/dashboard", label: "Dashboard", icon: Home },
-  { href: "/erp/products", label: "Products", icon: FileText },
-  { href: "/erp/inventory", label: "Inventory", icon: Building2 },
-  { href: "/erp/customers", label: "Customers", icon: Users },
-  { href: "/erp/settings", label: "More", icon: Settings }
+  { href: "/dashboard", labelKey: "dashboard", icon: Home },
+  { href: "/erp/sales", labelKey: "sales", icon: Receipt },
+  { href: "/erp/inventory-dashboard", labelKey: "inventory", icon: Boxes },
+  { href: "/erp/customers", labelKey: "customers", icon: Users },
+  { href: "/erp/more", labelKey: "more", icon: Settings }
 ];
 
-export function MobileNav({ scope = "platform" }: { scope?: "platform" | "tenant" }) {
+export function MobileNav({ scope = "platform", locale = "en" }: { scope?: "platform" | "tenant"; locale?: Locale }) {
   const items = scope === "tenant" ? tenantItems : platformItems;
 
   return (
@@ -27,7 +29,7 @@ export function MobileNav({ scope = "platform" }: { scope?: "platform" | "tenant
         return (
           <Link key={item.href} href={item.href} className="flex flex-col items-center gap-1 rounded-xl py-1.5 text-[11px] font-medium text-slate-500">
             <Icon className="size-4" strokeWidth={1.8} />
-            {item.label}
+            {t(locale, item.labelKey as TranslationKey)}
           </Link>
         );
       })}

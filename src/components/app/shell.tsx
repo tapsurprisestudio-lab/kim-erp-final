@@ -1,8 +1,11 @@
 import { Sidebar } from "@/components/app/sidebar";
 import { Topbar } from "@/components/app/topbar";
 import { MobileNav } from "@/components/app/mobile-nav";
+import { auth } from "@/auth";
+import { directionForLocale, normalizeLocale } from "@/lib/i18n";
+import { prisma } from "@/lib/prisma";
 
-export function AppShell({
+export async function AppShell({
   children,
   userName,
   scope = "platform"
@@ -11,16 +14,51 @@ export function AppShell({
   userName?: string | null;
   scope?: "platform" | "tenant";
 }) {
+  const session = await auth();
+  const company = scope === "tenant" && session?.user?.companyId
+    ? await prisma.company.findUnique({
+        where: { id: session.user.companyId },
+        select: {
+          name: true,
+          logoUrl: true,
+          defaultLanguage: true,
+          defaultCurrency: true,
+          primaryColor: true,
+          accentColor: true,
+          theme: true
+        }
+      })
+    : null;
+  const locale = normalizeLocale(company?.defaultLanguage ?? session?.user?.locale);
+  const unreadCount = session?.user?.id
+    ? await prisma.notification.count({
+        where: {
+          readAt: null,
+          OR: [
+            { userId: session.user.id },
+            ...(session.user.companyId ? [{ companyId: session.user.companyId }] : [])
+          ]
+        }
+      })
+    : 0;
+
   return (
-    <div className="app-shell min-h-screen">
+    <div className="app-shell min-h-screen" dir={directionForLocale(locale)} data-theme={company?.theme ?? "light"}>
       <div className="mx-auto flex min-h-screen max-w-[1600px] overflow-hidden bg-white/60 shadow-soft lg:my-4 lg:min-h-[calc(100vh-2rem)] lg:rounded-2xl lg:border lg:border-white">
-        <Sidebar scope={scope} />
+        <Sidebar scope={scope} locale={locale} companyName={company?.name} companyLogoUrl={company?.logoUrl} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <Topbar userName={userName} />
+          <Topbar
+            userName={userName}
+            scope={scope}
+            locale={locale}
+            unreadCount={unreadCount}
+            companyName={company?.name}
+            companyLogoUrl={company?.logoUrl}
+          />
           <main className="flex-1 overflow-y-auto p-4 pb-24 lg:p-6">{children}</main>
         </div>
       </div>
-      <MobileNav scope={scope} />
+      <MobileNav scope={scope} locale={locale} />
     </div>
   );
 }
