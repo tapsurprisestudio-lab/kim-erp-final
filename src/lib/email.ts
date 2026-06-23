@@ -20,6 +20,17 @@ export async function sendMail({
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM } = process.env;
 
   if (!SMTP_HOST || !SMTP_PORT || !SMTP_FROM) {
+    console.info("[email:skipped]", {
+      reason: "SMTP is not configured",
+      to,
+      subject,
+      text,
+      attachments: attachments.map((attachment) => ({
+        filename: attachment.filename,
+        contentType: attachment.contentType,
+        bytes: attachment.content.length
+      }))
+    });
     return { skipped: true };
   }
 

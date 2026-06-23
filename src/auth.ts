@@ -7,7 +7,7 @@ import { verifyPassword } from "@/lib/security/password";
 import { securityLog } from "@/lib/audit";
 
 const credentialsSchema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().min(2),
   password: z.string().min(8)
 });
 
@@ -31,17 +31,19 @@ export const authConfig = {
           return null;
         }
 
-        const email = parsed.data.email.toLowerCase();
+        const identifier = parsed.data.email.toLowerCase();
         const ipAddress =
           request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
           request.headers.get("x-real-ip") ??
           "unknown";
         const userAgent = request.headers.get("user-agent") ?? undefined;
 
-        await assertLoginAllowed(email, ipAddress);
+        await assertLoginAllowed(identifier, ipAddress);
 
-        const user = await prisma.user.findUnique({
-          where: { email },
+        const user = await prisma.user.findFirst({
+          where: {
+            OR: [{ email: identifier }, { username: identifier }]
+          },
           include: {
             company: true,
             roles: {
@@ -61,17 +63,17 @@ export const authConfig = {
         });
 
         if (!user || user.deletedAt || user.status !== "ACTIVE") {
-          await recordLoginAttempt(email, ipAddress, false);
+          await recordLoginAttempt(identifier, ipAddress, false);
           await securityLog("LOGIN_FAILED", "Login failed for inactive or missing account", {
             ipAddress,
             userAgent,
-            metadata: { email }
+            metadata: { identifier }
           });
           return null;
         }
 
         if (user.company && ["SUSPENDED", "DELETED"].includes(user.company.status)) {
-          await recordLoginAttempt(email, ipAddress, false);
+          await recordLoginAttempt(identifier, ipAddress, false);
           await securityLog("LOGIN_FAILED", "Login failed for suspended company", {
             companyId: user.companyId,
             userId: user.id,
@@ -82,7 +84,7 @@ export const authConfig = {
         }
 
         const valid = await verifyPassword(parsed.data.password, user.passwordHash);
-        await recordLoginAttempt(email, ipAddress, valid);
+        await recordLoginAttempt(identifier, ipAddress, valid);
 
         if (!valid) {
           await securityLog("LOGIN_FAILED", "Login failed due to invalid password", {

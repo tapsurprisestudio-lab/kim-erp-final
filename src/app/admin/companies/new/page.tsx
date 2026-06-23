@@ -20,7 +20,7 @@ export default async function NewCompanyPage() {
   ]);
 
   return (
-    <AppShell userName={session.user.name}>
+    <AppShell userName={session.user.name} scope="platform">
       <div className="mb-4">
         <Button variant="ghost" asChild>
           <Link href="/admin/companies">
@@ -37,7 +37,7 @@ export default async function NewCompanyPage() {
             </div>
             <div>
               <CardTitle>Add New Company</CardTitle>
-              <p className="mt-1 text-sm text-slate-500">Creates the tenant, owner account, subscription, logs, logo asset, and welcome contract.</p>
+              <p className="mt-1 text-sm text-slate-500">Creates the tenant, active owner login, subscription, logs, logo asset, and welcome contract.</p>
             </div>
           </div>
         </CardHeader>
@@ -92,6 +92,14 @@ export default async function NewCompanyPage() {
                   <Input name="taxNumber" placeholder="TX-556077889" />
                 </label>
                 <label className="space-y-2 text-sm font-medium text-slate-700">
+                  <span>Company email</span>
+                  <Input name="companyEmail" type="email" placeholder="info@company.com" />
+                </label>
+                <label className="space-y-2 text-sm font-medium text-slate-700">
+                  <span>Phone</span>
+                  <Input name="phone" placeholder="+218..." />
+                </label>
+                <label className="space-y-2 text-sm font-medium text-slate-700">
                   <span>Country</span>
                   <Input name="country" placeholder="Libya" />
                 </label>
@@ -110,8 +118,16 @@ export default async function NewCompanyPage() {
                   <Input name="ownerEmail" type="email" required placeholder="owner@company.com" />
                 </label>
                 <label className="space-y-2 text-sm font-medium text-slate-700">
-                  <span>Phone</span>
-                  <Input name="phone" placeholder="+218..." />
+                  <span>Username</span>
+                  <Input name="username" required placeholder="ziad.owner" autoComplete="username" />
+                </label>
+                <label className="space-y-2 text-sm font-medium text-slate-700">
+                  <span>Password</span>
+                  <Input name="password" type="password" required minLength={8} placeholder="Minimum 8 characters" autoComplete="new-password" />
+                </label>
+                <label className="space-y-2 text-sm font-medium text-slate-700">
+                  <span>Confirm password</span>
+                  <Input name="confirmPassword" type="password" required minLength={8} placeholder="Repeat password" autoComplete="new-password" />
                 </label>
                 <label className="space-y-2 text-sm font-medium text-slate-700">
                   <span>Logo upload</span>

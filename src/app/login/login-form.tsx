@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { LockKeyhole, Mail } from "lucide-react";
+import { LockKeyhole, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -44,10 +44,10 @@ export function LoginForm() {
       }}
     >
       <label className="block space-y-2 text-sm font-medium text-slate-700">
-        <span>Email</span>
+        <span>Email or username</span>
         <div className="relative">
-          <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-          <Input className="pl-10" name="email" type="email" placeholder="admin@kim-erb.com" required />
+          <UserRound className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+          <Input className="pl-10" name="email" type="text" placeholder="admin@kim-erb.com or superadmin" required />
         </div>
       </label>
       <label className="block space-y-2 text-sm font-medium text-slate-700">
