@@ -8,12 +8,12 @@ import { Button } from "@/components/ui/button";
 import { markAllTenantNotificationsReadAction, markNotificationReadAction } from "@/app/erp/notifications/actions";
 import { normalizeLocale } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenantPermission } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
 
 export default async function TenantNotificationsPage() {
-  const { session, companyId } = await requireTenant();
+  const { session, companyId } = await requireTenantPermission("notifications.read");
   const [company, notifications] = await Promise.all([
     prisma.company.findUnique({ where: { id: companyId }, select: { defaultLanguage: true } }),
     (async () => {

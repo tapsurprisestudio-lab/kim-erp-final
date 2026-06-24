@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { audit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenantPermission } from "@/lib/tenant";
 
 const settingsSchema = z.object({
   name: z.string().trim().min(2),
@@ -26,7 +26,7 @@ const settingsSchema = z.object({
 });
 
 export async function updateCompanySettingsAction(formData: FormData) {
-  const { session, companyId } = await requireTenant();
+  const { session, companyId } = await requireTenantPermission("settings.manage");
   const parsed = settingsSchema.parse(Object.fromEntries(formData));
   const stableData = {
     name: parsed.name,

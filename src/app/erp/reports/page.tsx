@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { normalizeLocale } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenantPermission } from "@/lib/tenant";
 import { formatMoney } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReportsPage() {
-  const { session, companyId } = await requireTenant();
+  const { session, companyId } = await requireTenantPermission("reports.read");
   const [company, customers, products, inventory, invoices, expenses] = await Promise.all([
     prisma.company.findUniqueOrThrow({ where: { id: companyId } }),
     prisma.customer.count({ where: { companyId, deletedAt: null } }),

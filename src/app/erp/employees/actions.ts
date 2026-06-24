@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { audit, securityLog } from "@/lib/audit";
 import { sendMail } from "@/lib/email";
+import { createNotification } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { generateTemporaryPassword, hashPassword } from "@/lib/security/password";
 import { requireTenantPermission } from "@/lib/tenant";
@@ -138,8 +139,32 @@ export async function updateEmployeeStatusAction(formData: FormData) {
   const { session, companyId } = await requireTenantPermission("employees.manage");
   const id = z.string().min(1).parse(formData.get("id"));
   const status = statusSchema.parse(formData.get("status"));
+  const company = await prisma.company.findUnique({ where: { id: companyId }, select: { ownerId: true } });
+  if (company?.ownerId === id && session.user.id !== id) {
+    await audit("employees.protected_owner_change_blocked", "User", id, {
+      companyId,
+      userId: session.user.id,
+      metadata: { status }
+    });
+    revalidatePath("/erp/employees");
+    return;
+  }
   await prisma.user.updateMany({ where: { id, companyId }, data: { status, deletedAt: status === "DELETED" ? new Date() : null } });
   await audit("employees.status", "User", id, { companyId, userId: session.user.id, metadata: { status } });
+  await securityLog(status === "DELETED" ? "USER_DELETED" : "USER_CREATED", `Tenant user status changed to ${status}`, {
+    companyId,
+    userId: session.user.id,
+    metadata: { targetUserId: id, status }
+  });
+  await createNotification({
+    companyId,
+    userId: id,
+    title: `Account ${status.toLowerCase()}`,
+    body: status === "ACTIVE" ? "Your account has been activated." : `Your account status is now ${status}.`,
+    type: "account_status",
+    priority: status === "ACTIVE" ? "info" : "warning",
+    actionLink: "/dashboard"
+  });
   revalidatePath("/erp/employees");
 }
 

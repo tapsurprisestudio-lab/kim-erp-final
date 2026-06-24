@@ -11,13 +11,13 @@ import { Input } from "@/components/ui/input";
 import { createSaleAction } from "@/app/erp/sales/actions";
 import { normalizeLocale } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenantPermission } from "@/lib/tenant";
 import { formatMoney } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export default async function SalesPage() {
-  const { session, companyId } = await requireTenant();
+  const { session, companyId } = await requireTenantPermission("sales.read");
   const [company, invoices, revenue, payments, customers, customerOptions, products] = await Promise.all([
     prisma.company.findUnique({ where: { id: companyId }, select: { defaultCurrency: true, defaultLanguage: true } }),
     prisma.invoice.findMany({

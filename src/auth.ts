@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { assertLoginAllowed, recordLoginAttempt } from "@/lib/security/rate-limit";
 import { verifyPassword } from "@/lib/security/password";
 import { securityLog } from "@/lib/audit";
+import { FULL_TENANT_PERMISSIONS, isCompanyOwnerLike } from "@/lib/auth/permissions";
 
 const credentialsSchema = z.object({
   email: z.string().trim().min(2),
@@ -72,7 +73,7 @@ export const authConfig = {
           return null;
         }
 
-        if (user.company && ["SUSPENDED", "DELETED"].includes(user.company.status)) {
+        if (user.company && (user.company.deletedAt || user.company.status !== "ACTIVE")) {
           await recordLoginAttempt(identifier, ipAddress, false);
           await securityLog("LOGIN_FAILED", "Login failed for suspended company", {
             companyId: user.companyId,
@@ -109,13 +110,16 @@ export const authConfig = {
         });
 
         const roles = user.roles.map((userRole) => userRole.role.key);
-        const permissions = [
+        const rolePermissions = [
           ...new Set(
             user.roles.flatMap((userRole) =>
               userRole.role.permissions.map((rolePermission) => rolePermission.permission.key)
             )
           )
         ];
+        const permissions = isCompanyOwnerLike({ userId: user.id, companyOwnerId: user.company?.ownerId, roles })
+          ? Array.from(new Set([...rolePermissions, ...FULL_TENANT_PERMISSIONS]))
+          : rolePermissions;
 
         return {
           id: user.id,
@@ -144,6 +148,53 @@ export const authConfig = {
         token.locale = user.locale;
         token.roles = user.roles;
         token.permissions = user.permissions;
+      } else if (token.userId) {
+        const freshUser = await prisma.user.findUnique({
+          where: { id: token.userId as string },
+          include: {
+            company: true,
+            roles: {
+              include: {
+                role: {
+                  include: {
+                    permissions: { include: { permission: true } }
+                  }
+                }
+              }
+            }
+          }
+        });
+        if (!freshUser || freshUser.deletedAt || freshUser.status !== "ACTIVE") {
+          token.status = freshUser?.status ?? "DELETED";
+          token.permissions = [];
+          token.roles = [];
+          token.companyId = freshUser?.companyId ?? null;
+          return token;
+        }
+        if (freshUser.company && (freshUser.company.deletedAt || freshUser.company.status !== "ACTIVE")) {
+          token.status = "COMPANY_BLOCKED";
+          token.permissions = [];
+          token.companyId = freshUser.companyId;
+          token.companyName = freshUser.company.name;
+          return token;
+        }
+        const roles = freshUser.roles.map((userRole) => userRole.role.key);
+        const rolePermissions = [
+          ...new Set(
+            freshUser.roles.flatMap((userRole) =>
+              userRole.role.permissions.map((rolePermission) => rolePermission.permission.key)
+            )
+          )
+        ];
+        token.companyId = freshUser.companyId;
+        token.companyName = freshUser.company?.name;
+        token.role = roles[0] ?? "user";
+        token.status = freshUser.status;
+        token.locale = freshUser.locale;
+        token.roles = roles;
+        token.permissions = isCompanyOwnerLike({ userId: freshUser.id, companyOwnerId: freshUser.company?.ownerId, roles })
+          ? Array.from(new Set([...rolePermissions, ...FULL_TENANT_PERMISSIONS]))
+          : rolePermissions;
       }
       return token;
     },

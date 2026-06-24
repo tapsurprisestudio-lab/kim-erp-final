@@ -8,12 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { updateCompanySettingsAction } from "@/app/erp/settings/actions";
 import { prisma } from "@/lib/prisma";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenantPermission } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
 
 export default async function TenantSettingsPage() {
-  const { session, companyId } = await requireTenant();
+  const { session, companyId } = await requireTenantPermission("settings.manage");
   const company = await prisma.company.findUnique({
     where: { id: companyId },
     select: {

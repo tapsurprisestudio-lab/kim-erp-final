@@ -1,4 +1,4 @@
-import { Building2, Download, Printer, Trash2 } from "lucide-react";
+import { Building2, Download, Printer, ShieldCheck, Trash2, UserRound, Wrench } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app/shell";
@@ -6,7 +6,13 @@ import { SectionHeader } from "@/components/app/section-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { resendCompanyWelcomeEmailAction, softDeleteCompanyAction, updateCompanyStatusAction } from "@/app/admin/companies/[id]/actions";
+import {
+  repairOwnerAccessAction,
+  resendCompanyWelcomeEmailAction,
+  resetOwnerPasswordAction,
+  softDeleteCompanyAction,
+  updateCompanyStatusAction
+} from "@/app/admin/companies/[id]/actions";
 import { requireSuperAdmin } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 
@@ -17,7 +23,7 @@ export default async function CompanyDetailsPage({
   searchParams
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ created?: string; resent?: string; email?: string; username?: string }>;
+  searchParams: Promise<{ created?: string; resent?: string; repaired?: string; ownerPasswordReset?: string; email?: string; username?: string }>;
 }) {
   const session = await requireSuperAdmin();
   const { id } = await params;
@@ -92,6 +98,13 @@ export default async function CompanyDetailsPage({
           </CardContent>
         </Card>
       )}
+      {(query.repaired || query.ownerPasswordReset) && (
+        <Card className="mb-5 border-emerald-200 bg-emerald-50">
+          <CardContent className="p-5 font-semibold text-emerald-800">
+            {query.repaired ? "Owner access repaired. Full company permissions were restored." : "Owner password reset and email notification attempted."}
+          </CardContent>
+        </Card>
+      )}
       <div className="grid gap-5 xl:grid-cols-[1fr_0.8fr]">
         <Card>
           <CardHeader>
@@ -131,10 +144,32 @@ export default async function CompanyDetailsPage({
               <Button type="submit">Update</Button>
             </form>
             {company.owner && (
-              <form action={resendCompanyWelcomeEmailAction}>
-                <input type="hidden" name="id" value={company.id} />
-                <Button type="submit" variant="outline">Resend welcome email</Button>
-              </form>
+              <div className="space-y-2">
+                <Button asChild variant="outline">
+                  <Link href={`/admin/users?companyId=${company.id}`}>
+                    <UserRound className="size-4" />
+                    View company users
+                  </Link>
+                </Button>
+                <form action={repairOwnerAccessAction}>
+                  <input type="hidden" name="id" value={company.id} />
+                  <Button type="submit" variant="outline">
+                    <Wrench className="size-4" />
+                    Repair owner access
+                  </Button>
+                </form>
+                <form action={resetOwnerPasswordAction}>
+                  <input type="hidden" name="id" value={company.id} />
+                  <Button type="submit" variant="outline">
+                    <ShieldCheck className="size-4" />
+                    Reset owner password
+                  </Button>
+                </form>
+                <form action={resendCompanyWelcomeEmailAction}>
+                  <input type="hidden" name="id" value={company.id} />
+                  <Button type="submit" variant="outline">Resend welcome email</Button>
+                </form>
+              </div>
             )}
             <form action={softDeleteCompanyAction}>
               <input type="hidden" name="id" value={company.id} />

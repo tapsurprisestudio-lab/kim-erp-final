@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/rbac";
+import { FULL_TENANT_PERMISSIONS, isCompanyOwnerLike } from "@/lib/auth/permissions";
 
 export async function requireTenant() {
   const session = await requireSession();
@@ -16,8 +17,27 @@ export async function requireTenant() {
 
 export async function requireTenantPermission(permission: string) {
   const tenant = await requireTenant();
+  const company = await prisma.company.findUnique({
+    where: { id: tenant.companyId },
+    select: { ownerId: true, status: true, deletedAt: true }
+  });
+  if (!company || company.deletedAt || company.status === "DELETED") {
+    redirect("/company-suspended?reason=deleted");
+  }
+  if (company.status !== "ACTIVE") {
+    redirect("/company-suspended");
+  }
+  const ownerLike = isCompanyOwnerLike({
+    userId: tenant.session.user.id,
+    companyOwnerId: company.ownerId,
+    roles: tenant.session.user.roles
+  });
+  if (ownerLike) {
+    tenant.session.user.permissions = Array.from(new Set([...(tenant.session.user.permissions ?? []), ...FULL_TENANT_PERMISSIONS]));
+    return tenant;
+  }
   if (!hasPermission(tenant.session.user.permissions, permission)) {
-    redirect("/dashboard?error=permission-denied");
+    redirect("/access-denied");
   }
   return tenant;
 }

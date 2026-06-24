@@ -3,11 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenantPermission } from "@/lib/tenant";
 
 export async function markNotificationReadAction(formData: FormData) {
   try {
-    const { session, companyId } = await requireTenant();
+    const { session, companyId } = await requireTenantPermission("notifications.read");
     const id = z.string().min(1).parse(formData.get("id"));
     await prisma.notification.updateMany({
       where: {
@@ -24,7 +24,7 @@ export async function markNotificationReadAction(formData: FormData) {
 
 export async function markAllTenantNotificationsReadAction() {
   try {
-    const { session, companyId } = await requireTenant();
+    const { session, companyId } = await requireTenantPermission("notifications.read");
     await prisma.notification.updateMany({
       where: {
         readAt: null,
