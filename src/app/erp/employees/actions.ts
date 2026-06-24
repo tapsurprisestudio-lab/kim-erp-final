@@ -7,7 +7,7 @@ import { audit, securityLog } from "@/lib/audit";
 import { sendMail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 import { generateTemporaryPassword, hashPassword } from "@/lib/security/password";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenantPermission } from "@/lib/tenant";
 import { slugify } from "@/lib/utils";
 
 const employeeSchema = z.object({
@@ -40,7 +40,7 @@ async function createActivationToken(email: string) {
 }
 
 export async function inviteEmployeeAction(formData: FormData) {
-  const { session, companyId } = await requireTenant();
+  const { session, companyId } = await requireTenantPermission("employees.manage");
   const parsed = employeeSchema.parse(Object.fromEntries(formData));
   const role = await prisma.role.findFirst({ where: { id: parsed.roleId, companyId } });
   if (!role) {
@@ -81,7 +81,7 @@ export async function inviteEmployeeAction(formData: FormData) {
 }
 
 export async function updateEmployeeStatusAction(formData: FormData) {
-  const { session, companyId } = await requireTenant();
+  const { session, companyId } = await requireTenantPermission("employees.manage");
   const id = z.string().min(1).parse(formData.get("id"));
   const status = statusSchema.parse(formData.get("status"));
   await prisma.user.updateMany({ where: { id, companyId }, data: { status, deletedAt: status === "DELETED" ? new Date() : null } });
@@ -90,7 +90,7 @@ export async function updateEmployeeStatusAction(formData: FormData) {
 }
 
 export async function resetEmployeePasswordAction(formData: FormData) {
-  const { session, companyId } = await requireTenant();
+  const { session, companyId } = await requireTenantPermission("employees.manage");
   const id = z.string().min(1).parse(formData.get("id"));
   const password = generateTemporaryPassword();
   const user = await prisma.user.findFirstOrThrow({ where: { id, companyId } });

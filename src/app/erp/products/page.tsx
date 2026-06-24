@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { createProductAction, deleteProductAction, toggleProductAction, updateProductAction } from "@/app/erp/products/actions";
+import { normalizeLocale } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 import { requireTenantPermission } from "@/lib/tenant";
 
@@ -13,7 +14,8 @@ export const dynamic = "force-dynamic";
 
 export default async function ProductsPage() {
   const { session, companyId } = await requireTenantPermission("products.manage");
-  const [products, categories, warehouses] = await Promise.all([
+  const [company, products, categories, warehouses] = await Promise.all([
+    prisma.company.findUnique({ where: { id: companyId }, select: { defaultLanguage: true } }),
     prisma.product.findMany({
       where: { companyId, deletedAt: null },
       orderBy: { createdAt: "desc" },
@@ -23,36 +25,49 @@ export default async function ProductsPage() {
     prisma.category.findMany({ where: { companyId, deletedAt: null }, orderBy: { name: "asc" } }),
     prisma.warehouse.findMany({ where: { companyId, deletedAt: null, active: true }, orderBy: { name: "asc" } })
   ]);
+  const locale = normalizeLocale(company?.defaultLanguage);
+  const isAr = locale === "ar";
 
   return (
     <AppShell userName={session.user.name} scope="tenant">
-      <SectionHeader title="Products" description="Tenant-scoped product catalog with SKU uniqueness per company." icon={Package} />
+      <SectionHeader
+        title={isAr ? "المنتجات" : "Products"}
+        description={isAr ? "أضف منتجاتك أو خدماتك هنا. اسم المنتج فقط مطلوب، وباقي الحقول اختيارية." : "Add your products or services here. Only product name is required; all other fields are optional."}
+        icon={Package}
+      />
+      <Card className="mb-5 border-blue-100 bg-blue-50">
+        <CardContent className="p-4 text-sm text-blue-950">
+          {isAr
+            ? "مثال: يمكنك إضافة iPhone 15 Pro بكتابة الاسم فقط، أو إضافة السعر والمخزون والباركود لاحقا."
+            : "Example: add iPhone 15 Pro with only the name, or add price, stock, barcode and specs later."}
+        </CardContent>
+      </Card>
       <Card className="mb-5">
         <CardHeader>
-          <CardTitle>Add or Update Product</CardTitle>
+          <CardTitle>{isAr ? "إضافة أو تحديث منتج" : "Add or Update Product"}</CardTitle>
         </CardHeader>
         <CardContent>
           <form action={createProductAction} className="grid gap-3 lg:grid-cols-4">
-            <Input name="sku" placeholder="SKU / code (optional)" />
-            <Input name="barcode" placeholder="Barcode (optional)" />
-            <Input name="name" placeholder="iPhone 15 Pro" required />
+            <Input name="sku" placeholder={isAr ? "رمز المنتج (اختياري)" : "SKU / code (optional)"} />
+            <Input name="barcode" placeholder={isAr ? "الباركود (اختياري)" : "Barcode (optional)"} />
+            <Input name="name" placeholder={isAr ? "اسم المنتج مثل iPhone 15 Pro" : "iPhone 15 Pro"} required />
             <select name="categoryId" className="h-10 rounded-lg border border-input bg-white px-3 text-sm">
-              <option value="">No category</option>
+              <option value="">{isAr ? "بدون تصنيف" : "No category"}</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
                 </option>
               ))}
             </select>
-            <Input name="brand" placeholder="Brand (optional)" />
-            <Input name="model" placeholder="Model (optional)" />
-            <Input name="unit" placeholder="Unit (optional)" />
-            <Input name="price" type="number" step="0.01" placeholder="Sale price (optional)" />
-            <Input name="cost" type="number" step="0.01" placeholder="Purchase price (optional)" />
-            <Input name="taxRate" type="number" step="0.01" placeholder="Tax % (optional)" />
-            <Input name="stockQuantity" type="number" step="0.001" placeholder="Opening stock (optional)" />
+            <Input name="brand" placeholder={isAr ? "العلامة التجارية (اختياري)" : "Brand (optional)"} />
+            <Input name="model" placeholder={isAr ? "الموديل (اختياري)" : "Model (optional)"} />
+            <Input name="unit" placeholder={isAr ? "الوحدة (اختياري)" : "Unit (optional)"} />
+            <Input name="price" type="number" step="0.01" placeholder={isAr ? "سعر البيع (اختياري)" : "Sale price (optional)"} />
+            <Input name="cost" type="number" step="0.01" placeholder={isAr ? "سعر الشراء (اختياري)" : "Purchase price (optional)"} />
+            <Input name="taxRate" type="number" step="0.01" placeholder={isAr ? "الضريبة % (اختياري)" : "Tax % (optional)"} />
+            <Input name="stockQuantity" type="number" step="0.001" placeholder={isAr ? "كمية البداية (اختياري)" : "Opening stock (optional)"} />
             <select name="warehouseId" className="h-10 rounded-lg border border-input bg-white px-3 text-sm">
-              <option value="">No opening warehouse</option>
+              <option value="">{isAr ? "بدون مستودع بداية" : "No opening warehouse"}</option>
               {warehouses.map((warehouse) => (
                 <option key={warehouse.id} value={warehouse.id}>
                   {warehouse.name}
@@ -60,17 +75,17 @@ export default async function ProductsPage() {
               ))}
             </select>
             <Input name="expiryDate" type="date" placeholder="Expiry date" />
-            <Input name="serialNumber" placeholder="Serial number (optional)" />
+            <Input name="serialNumber" placeholder={isAr ? "الرقم التسلسلي (اختياري)" : "Serial number (optional)"} />
             <Input name="imei" placeholder="IMEI (optional)" />
-            <Input name="color" placeholder="Color (optional)" />
-            <Input name="size" placeholder="Size (optional)" />
-            <Input name="imageUrl" placeholder="Image URL (optional)" />
-            <Input name="specs" placeholder="Specs (optional)" />
-            <Input name="description" placeholder="Description (optional)" />
+            <Input name="color" placeholder={isAr ? "اللون (اختياري)" : "Color (optional)"} />
+            <Input name="size" placeholder={isAr ? "المقاس (اختياري)" : "Size (optional)"} />
+            <Input name="imageUrl" placeholder={isAr ? "رابط الصورة (اختياري)" : "Image URL (optional)"} />
+            <Input name="specs" placeholder={isAr ? "المواصفات (اختياري)" : "Specs (optional)"} />
+            <Input name="description" placeholder={isAr ? "الوصف (اختياري)" : "Description (optional)"} />
             <div className="lg:col-span-4">
               <Button type="submit">
                 <Plus className="size-4" />
-                Save Product
+                {isAr ? "حفظ المنتج" : "Save Product"}
               </Button>
             </div>
           </form>

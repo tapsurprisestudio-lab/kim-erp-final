@@ -5,7 +5,7 @@ import { z } from "zod";
 import { audit } from "@/lib/audit";
 import { createNotification } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenantPermission } from "@/lib/tenant";
 
 const saleSchema = z.object({
   customerId: z.string().optional(),
@@ -31,7 +31,7 @@ async function nextInvoiceNumber(companyId: string) {
 }
 
 export async function createSaleAction(formData: FormData) {
-  const { session, companyId } = await requireTenant();
+  const { session, companyId } = await requireTenantPermission("sales.read");
   const parsed = saleSchema.parse(Object.fromEntries(formData));
   const items = lineItemsFromForm(formData);
   if (items.length === 0) {

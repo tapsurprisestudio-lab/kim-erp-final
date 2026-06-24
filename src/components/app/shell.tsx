@@ -82,7 +82,13 @@ export async function AppShell({
   return (
     <div className="app-shell min-h-screen" dir={directionForLocale(locale)} data-theme={theme}>
       <div className="shell-frame mx-auto flex min-h-screen max-w-[1600px] overflow-hidden bg-white/60 shadow-soft lg:my-4 lg:min-h-[calc(100vh-2rem)] lg:rounded-2xl lg:border lg:border-white">
-        <Sidebar scope={scope} locale={locale} companyName={company?.name} companyLogoUrl={company?.logoUrl} />
+        <Sidebar
+          scope={scope}
+          locale={locale}
+          companyName={company?.name}
+          companyLogoUrl={company?.logoUrl}
+          permissions={session?.user?.permissions ?? []}
+        />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar
             userName={userName}

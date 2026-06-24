@@ -14,12 +14,22 @@ export const dynamic = "force-dynamic";
 
 export default async function TenantSupportPage() {
   const { session, companyId } = await requireTenant();
-  const tickets = await prisma.supportTicket.findMany({ where: { companyId }, orderBy: { createdAt: "desc" }, take: 100 });
+  const tickets = await prisma.supportTicket.findMany({
+    where: { companyId },
+    include: { replies: { include: { user: true }, orderBy: { createdAt: "desc" }, take: 1 } },
+    orderBy: { createdAt: "desc" },
+    take: 100
+  });
 
   return (
     <AppShell userName={session.user.name} scope="tenant">
       <div className="space-y-6">
         <SectionHeader title="Help / Support" description="Create and track support tickets for this company." icon={Headphones} />
+        <Card className="border-blue-100 bg-blue-50">
+          <CardContent className="p-4 text-sm text-blue-950">
+            Need help? Create a ticket with a clear subject and priority. KIM-ERB support replies here, and you will receive a notification when the ticket is updated.
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader>
             <CardTitle>Create ticket</CardTitle>
@@ -42,11 +52,12 @@ export default async function TenantSupportPage() {
           </CardContent>
         </Card>
         <DataTable
-          headers={["Subject", "Priority", "Status", "Created"]}
+          headers={["Subject", "Priority", "Status", "Latest Reply", "Created"]}
           rows={tickets.map((ticket) => [
             ticket.subject,
             ticket.priority,
             <Badge key="status" variant={ticket.status === "OPEN" ? "warning" : ticket.status === "RESOLVED" ? "success" : "secondary"}>{ticket.status}</Badge>,
+            ticket.replies[0]?.message ?? "-",
             ticket.createdAt.toLocaleString()
           ])}
         />

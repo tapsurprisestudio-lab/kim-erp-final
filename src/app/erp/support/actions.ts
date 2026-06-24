@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { audit } from "@/lib/audit";
-import { createNotification } from "@/lib/notifications";
+import { createNotification, notifyPlatformAdmins } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
 
@@ -35,5 +35,14 @@ export async function createTenantSupportTicketAction(formData: FormData) {
     priority: parsed.priority === "urgent" ? "urgent" : "info",
     actionLink: "/erp/support"
   });
+  await notifyPlatformAdmins({
+    title: "New tenant support ticket",
+    body: `${session.user.companyName ?? "Company"}: ${parsed.subject}`,
+    type: "support",
+    priority: parsed.priority === "urgent" ? "urgent" : "warning",
+    actionLink: "/admin/support"
+  });
   revalidatePath("/erp/support");
+  revalidatePath("/admin/support");
+  revalidatePath("/admin/notifications");
 }

@@ -1,4 +1,5 @@
-import { Settings } from "lucide-react";
+import Link from "next/link";
+import { LockKeyhole, Settings } from "lucide-react";
 import { AppShell } from "@/components/app/shell";
 import { DetailList } from "@/components/app/data-table";
 import { SectionHeader } from "@/components/app/section-header";
@@ -43,6 +44,17 @@ export default async function TenantSettingsPage() {
     <AppShell userName={session.user.name} scope="tenant">
       <div className="space-y-6">
         <SectionHeader title="Settings" description="Tenant company profile, localization and fiscal defaults." icon={Settings} />
+        <Card className="border-blue-100 bg-blue-50">
+          <CardContent className="flex flex-col gap-3 p-4 text-sm text-blue-950 md:flex-row md:items-center md:justify-between">
+            <span>Use this page to change language, theme, logo, colors, currency and invoice footer. Changes are saved to the company profile and apply after reload.</span>
+            <Button asChild variant="outline">
+              <Link href="/erp/settings/users-permissions">
+                <LockKeyhole className="size-4" />
+                Users & Permissions
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
         {!company ? (
           <Card>
             <CardContent className="p-5 text-sm text-slate-600">Company settings could not be loaded. Contact support.</CardContent>

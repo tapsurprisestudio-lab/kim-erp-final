@@ -37,3 +37,52 @@ export async function createNotification({
     return null;
   }
 }
+
+export async function notifyPlatformAdmins({
+  title,
+  body,
+  type = "info",
+  priority = "info",
+  actionLink
+}: {
+  title: string;
+  body: string;
+  type?: string;
+  priority?: string;
+  actionLink?: string | null;
+}) {
+  try {
+    const admins = await prisma.user.findMany({
+      where: {
+        status: "ACTIVE",
+        deletedAt: null,
+        roles: {
+          some: {
+            role: {
+              key: { in: ["super_admin", "platform_admin"] },
+              scope: "platform"
+            }
+          }
+        }
+      },
+      select: { id: true }
+    });
+    if (admins.length === 0) {
+      return [];
+    }
+    return await prisma.notification.createMany({
+      data: admins.map((admin) => ({
+        userId: admin.id,
+        companyId: null,
+        title,
+        body,
+        type,
+        priority,
+        actionLink: actionLink ?? null
+      }))
+    });
+  } catch (error) {
+    console.error("[notification:platform-admins-failed]", { title, error });
+    return null;
+  }
+}

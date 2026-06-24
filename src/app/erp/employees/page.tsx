@@ -9,12 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { inviteEmployeeAction, resetEmployeePasswordAction, updateEmployeeStatusAction } from "@/app/erp/employees/actions";
 import { prisma } from "@/lib/prisma";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenantPermission } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
 
 export default async function EmployeesPage() {
-  const { session, companyId } = await requireTenant();
+  const { session, companyId } = await requireTenantPermission("employees.manage");
   const [users, roles, activeUsers, invitedUsers] = await Promise.all([
     prisma.user.findMany({ where: { companyId, deletedAt: null }, include: { roles: { include: { role: true } } }, orderBy: { createdAt: "desc" } }),
     prisma.role.findMany({ where: { companyId }, orderBy: { name: "asc" } }),

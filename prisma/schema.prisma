@@ -159,6 +159,7 @@ model User {
   auditLogs       AuditLog[]
   securityLogs    SecurityLog[]
   assignedTickets SupportTicket[] @relation("TicketAssignee")
+  supportReplies  SupportTicketReply[]
   notifications   Notification[]
 
   @@index([companyId])
@@ -683,9 +684,25 @@ model SupportTicket {
 
   company  Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
   assignee User?    @relation("TicketAssignee", fields: [assigneeId], references: [id])
+  replies  SupportTicketReply[]
 
   @@index([companyId])
   @@index([status])
+}
+
+model SupportTicketReply {
+  id        String   @id @default(cuid())
+  ticketId  String
+  userId    String?
+  message   String
+  visibility String  @default("public")
+  createdAt DateTime @default(now())
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User?         @relation(fields: [userId], references: [id])
+
+  @@index([ticketId])
+  @@index([userId])
 }
 
 model Notification {

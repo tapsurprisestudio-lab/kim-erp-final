@@ -23,7 +23,6 @@ import {
   Tags,
   Ruler,
   Users,
-  UserRound,
   WalletCards
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
@@ -58,35 +57,34 @@ const platformNav = [
 ];
 
 const tenantNav = [
-  { href: "/dashboard", labelKey: "dashboard", icon: Home },
-  { href: "/erp/customers", labelKey: "customers", icon: Users },
-  { href: "/erp/sales", labelKey: "sales", icon: Receipt },
-  { href: "/erp/inventory-dashboard", labelKey: "inventory", icon: Boxes },
-  { href: "/erp/purchases", labelKey: "purchases", icon: ShoppingCart },
-  { href: "/erp/payments-debts", labelKey: "paymentsDebts", icon: WalletCards },
-  { href: "/erp/reports", labelKey: "reports", icon: BarChart3 },
-  { href: "/erp/sales-representatives", labelKey: "salesRepresentatives", icon: UserRound },
-  { href: "/erp/employees", labelKey: "employees", icon: Users },
-  { href: "/erp/settings", labelKey: "settings", icon: Settings }
+  { href: "/dashboard", labelKey: "dashboard", icon: Home, permission: "company.dashboard.read" },
+  { href: "/erp/customers", labelKey: "customers", icon: Users, permission: "customers.manage" },
+  { href: "/erp/sales", labelKey: "sales", icon: Receipt, permission: "sales.read" },
+  { href: "/erp/products", labelKey: "products", icon: Package, permission: "products.manage" },
+  { href: "/erp/inventory-dashboard", labelKey: "inventory", icon: Boxes, permission: "inventory.manage" },
+  { href: "/erp/purchases", labelKey: "purchases", icon: ShoppingCart, permission: "purchases.read" },
+  { href: "/erp/payments-debts", labelKey: "paymentsDebts", icon: WalletCards, permission: "payments.manage" },
+  { href: "/erp/invoices", labelKey: "invoices", icon: Receipt, permission: "invoices.manage" },
+  { href: "/erp/quotations", labelKey: "quotations", icon: FileText, permission: "quotations.manage" },
+  { href: "/erp/reports", labelKey: "reports", icon: BarChart3, permission: "reports.read" },
+  { href: "/erp/employees", labelKey: "employees", icon: Users, permission: "employees.manage" },
+  { href: "/erp/settings", labelKey: "settings", icon: Settings, permission: "settings.manage" },
+  { href: "/erp/notifications", labelKey: "notifications", icon: Bell, permission: "notifications.read" },
+  { href: "/erp/support", labelKey: "helpSupport", icon: Headphones, permission: "company.dashboard.read" }
 ];
 
 const tenantMoreNav = [
-  { href: "/erp/suppliers", labelKey: "suppliers", icon: Building2 },
-  { href: "/erp/products", labelKey: "products", icon: Package },
-  { href: "/erp/categories", labelKey: "categories", icon: Tags },
-  { href: "/erp/units", labelKey: "units", icon: Ruler },
-  { href: "/erp/warehouses", labelKey: "warehouses", icon: Building2 },
-  { href: "/erp/stock-movements", labelKey: "stockMovements", icon: Activity },
-  { href: "/erp/quotations", labelKey: "quotations", icon: FileText },
-  { href: "/erp/invoices", labelKey: "invoices", icon: Receipt },
-  { href: "/erp/receipts", labelKey: "receipts", icon: FileText },
-  { href: "/erp/expenses", labelKey: "expenses", icon: CreditCard },
-  { href: "/erp/accounting", labelKey: "accounting", icon: BadgeDollarSign },
-  { href: "/erp/taxes", labelKey: "taxes", icon: BadgeDollarSign },
-  { href: "/erp/documents", labelKey: "documents", icon: FileText },
-  { href: "/erp/notifications", labelKey: "notifications", icon: Bell },
-  { href: "/erp/audit-logs", labelKey: "auditLogs", icon: Activity },
-  { href: "/erp/support", labelKey: "helpSupport", icon: Headphones }
+  { href: "/erp/suppliers", labelKey: "suppliers", icon: Building2, permission: "suppliers.manage" },
+  { href: "/erp/categories", labelKey: "categories", icon: Tags, permission: "categories.manage" },
+  { href: "/erp/units", labelKey: "units", icon: Ruler, permission: "units.manage" },
+  { href: "/erp/warehouses", labelKey: "warehouses", icon: Building2, permission: "warehouses.manage" },
+  { href: "/erp/stock-movements", labelKey: "stockMovements", icon: Activity, permission: "stock_movements.manage" },
+  { href: "/erp/receipts", labelKey: "receipts", icon: FileText, permission: "invoices.manage" },
+  { href: "/erp/expenses", labelKey: "expenses", icon: CreditCard, permission: "expenses.manage" },
+  { href: "/erp/accounting", labelKey: "accounting", icon: BadgeDollarSign, permission: "accounting.read" },
+  { href: "/erp/taxes", labelKey: "taxes", icon: BadgeDollarSign, permission: "accounting.read" },
+  { href: "/erp/documents", labelKey: "documents", icon: FileText, permission: "reports.read" },
+  { href: "/erp/audit-logs", labelKey: "auditLogs", icon: Activity, permission: "audit.read" }
 ];
 
 export function Sidebar({
@@ -94,16 +92,20 @@ export function Sidebar({
   scope = "platform",
   locale = "en",
   companyName,
-  companyLogoUrl
+  companyLogoUrl,
+  permissions = []
 }: {
   activePath?: string;
   scope?: "platform" | "tenant";
   locale?: Locale;
   companyName?: string | null;
   companyLogoUrl?: string | null;
+  permissions?: string[];
 }) {
-  const nav = scope === "tenant" ? tenantNav : platformNav;
-  const groups = scope === "tenant" ? [nav, tenantMoreNav] : [nav];
+  const canSee = (permission?: string) => scope === "platform" || !permission || permissions.includes(permission);
+  const nav = scope === "tenant" ? tenantNav.filter((item) => canSee(item.permission)) : platformNav;
+  const moreNav = tenantMoreNav.filter((item) => canSee(item.permission));
+  const groups = scope === "tenant" ? [nav, moreNav] : [nav];
 
   return (
     <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-slate-100 bg-white/90 px-4 py-5 lg:block">

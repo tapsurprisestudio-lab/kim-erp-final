@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { createSaleAction } from "@/app/erp/sales/actions";
+import { normalizeLocale } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
 import { formatMoney } from "@/lib/utils";
@@ -18,7 +19,7 @@ export const dynamic = "force-dynamic";
 export default async function SalesPage() {
   const { session, companyId } = await requireTenant();
   const [company, invoices, revenue, payments, customers, customerOptions, products] = await Promise.all([
-    prisma.company.findUnique({ where: { id: companyId }, select: { defaultCurrency: true } }),
+    prisma.company.findUnique({ where: { id: companyId }, select: { defaultCurrency: true, defaultLanguage: true } }),
     prisma.invoice.findMany({
       where: { companyId, deletedAt: null },
       include: { customer: true, payments: true, items: { include: { product: true } } },
@@ -32,66 +33,79 @@ export default async function SalesPage() {
     prisma.product.findMany({ where: { companyId, deletedAt: null, active: true }, orderBy: { name: "asc" }, take: 300 })
   ]);
   const currency = company?.defaultCurrency ?? "USD";
+  const locale = normalizeLocale(company?.defaultLanguage);
+  const isAr = locale === "ar";
 
   return (
     <AppShell userName={session.user.name} scope="tenant">
       <div className="space-y-6">
-        <SectionHeader title="Sales" description="Tenant revenue pipeline from invoices and collected payments." icon={TrendingUp} />
+        <SectionHeader
+          title={isAr ? "المبيعات" : "Sales"}
+          description={isAr ? "أنشئ عملية بيع، اختر العميل والمنتجات، أدخل المدفوع، ثم اطبع الفاتورة." : "Create a sale, choose customer/products, enter the paid amount, then print the invoice."}
+          icon={TrendingUp}
+        />
+        <Card className="border-blue-100 bg-blue-50">
+          <CardContent className="p-4 text-sm text-blue-950">
+            {isAr
+              ? "بعد حفظ البيع ستظهر الفاتورة في سجل المبيعات وقائمة الفواتير، وسيتم تخفيض المخزون تلقائيا إذا كان للمنتج رصيد."
+              : "After saving a sale, the invoice appears in sales history and invoices. Inventory decreases automatically when stock exists."}
+          </CardContent>
+        </Card>
         <MetricGrid
           metrics={[
-            { label: "Sales Documents", value: revenue._count.toLocaleString(), icon: TrendingUp, detail: "Invoices" },
-            { label: "Revenue", value: formatMoney(Number(revenue._sum.total ?? 0), currency), icon: TrendingUp, detail: "Invoice total" },
-            { label: "Collected", value: formatMoney(Number(payments._sum.amount ?? 0), currency), icon: TrendingUp, detail: `${payments._count} payments` },
-            { label: "Customers", value: customers.toLocaleString(), icon: TrendingUp, detail: "Active accounts" }
+            { label: isAr ? "مستندات البيع" : "Sales Documents", value: revenue._count.toLocaleString(), icon: TrendingUp, detail: isAr ? "فواتير" : "Invoices" },
+            { label: isAr ? "الإيرادات" : "Revenue", value: formatMoney(Number(revenue._sum.total ?? 0), currency), icon: TrendingUp, detail: isAr ? "إجمالي الفواتير" : "Invoice total" },
+            { label: isAr ? "المحصّل" : "Collected", value: formatMoney(Number(payments._sum.amount ?? 0), currency), icon: TrendingUp, detail: `${payments._count} ${isAr ? "دفعات" : "payments"}` },
+            { label: isAr ? "العملاء" : "Customers", value: customers.toLocaleString(), icon: TrendingUp, detail: isAr ? "حسابات نشطة" : "Active accounts" }
           ]}
         />
         <Card>
           <CardHeader>
-            <CardTitle>New Sale</CardTitle>
+            <CardTitle>{isAr ? "عملية بيع جديدة" : "New Sale"}</CardTitle>
           </CardHeader>
           <CardContent>
             <form action={createSaleAction} className="space-y-4">
               <div className="grid gap-3 md:grid-cols-4">
                 <select name="customerId" className="h-10 rounded-lg border border-input bg-white px-3 text-sm">
-                  <option value="">Walk-in customer</option>
+                  <option value="">{isAr ? "عميل مباشر" : "Walk-in customer"}</option>
                   {customerOptions.map((customer) => (
                     <option key={customer.id} value={customer.id}>{customer.name}</option>
                   ))}
                 </select>
-                <Input name="paymentMethod" placeholder="Payment method" defaultValue="Cash" />
-                <Input name="paidAmount" type="number" step="0.01" min="0" placeholder="Paid amount" defaultValue="0" />
+                <Input name="paymentMethod" placeholder={isAr ? "طريقة الدفع" : "Payment method"} defaultValue={isAr ? "نقدا" : "Cash"} />
+                <Input name="paidAmount" type="number" step="0.01" min="0" placeholder={isAr ? "المبلغ المدفوع" : "Paid amount"} defaultValue="0" />
               </div>
               {[0, 1, 2].map((index) => (
                 <div key={index} className="grid gap-3 md:grid-cols-[1.5fr_0.5fr_0.7fr_0.6fr_0.6fr]">
                   <select name={`items.${index}.productId`} className="h-10 rounded-lg border border-input bg-white px-3 text-sm">
-                    <option value="">Select product</option>
+                    <option value="">{isAr ? "اختر منتجا" : "Select product"}</option>
                     {products.map((product) => (
                       <option key={product.id} value={product.id}>
                         {product.name} - {formatMoney(Number(product.price), currency)}
                       </option>
                     ))}
                   </select>
-                  <Input name={`items.${index}.quantity`} type="number" step="0.001" min="0" placeholder="Qty" />
-                  <Input name={`items.${index}.price`} type="number" step="0.01" min="0" placeholder="Price" />
-                  <Input name={`items.${index}.discount`} type="number" step="0.01" min="0" placeholder="Discount" />
-                  <Input name={`items.${index}.taxRate`} type="number" step="0.01" min="0" placeholder="Tax %" />
+                  <Input name={`items.${index}.quantity`} type="number" step="0.001" min="0" placeholder={isAr ? "الكمية" : "Qty"} />
+                  <Input name={`items.${index}.price`} type="number" step="0.01" min="0" placeholder={isAr ? "السعر" : "Price"} />
+                  <Input name={`items.${index}.discount`} type="number" step="0.01" min="0" placeholder={isAr ? "الخصم" : "Discount"} />
+                  <Input name={`items.${index}.taxRate`} type="number" step="0.01" min="0" placeholder={isAr ? "الضريبة %" : "Tax %"} />
                 </div>
               ))}
               <Button type="submit">
                 <Plus className="size-4" />
-                Save Sale
+                {isAr ? "حفظ البيع" : "Save Sale"}
               </Button>
             </form>
           </CardContent>
         </Card>
         <DataTable
-          headers={["Invoice", "Customer", "Sold Items", "Date", "Total", "Paid", "Debt", "Status", "PDF / Print"]}
+          headers={isAr ? ["الفاتورة", "العميل", "المنتجات المباعة", "التاريخ", "الإجمالي", "المدفوع", "الدين", "الحالة", "PDF / طباعة"] : ["Invoice", "Customer", "Sold Items", "Date", "Total", "Paid", "Debt", "Status", "PDF / Print"]}
           rows={invoices.map((invoice) => {
             const paid = invoice.payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
             const debt = Math.max(Number(invoice.total) - paid, 0);
             return [
               invoice.number,
-              invoice.customer?.name ?? "Walk-in",
+              invoice.customer?.name ?? (isAr ? "عميل مباشر" : "Walk-in"),
               invoice.items.map((item) => `${item.description} x ${item.quantity.toString()}`).join(", ") || "-",
               invoice.issueDate.toLocaleDateString(),
               formatMoney(Number(invoice.total), invoice.currencyCode),
@@ -104,7 +118,7 @@ export default async function SalesPage() {
                 <Button size="sm" variant="outline" asChild>
                   <Link href={`/erp/invoices/${invoice.id}/print`}>
                     <Printer className="size-4" />
-                    Print
+                    {isAr ? "طباعة" : "Print"}
                   </Link>
                 </Button>
                 <Button size="sm" variant="outline" asChild>

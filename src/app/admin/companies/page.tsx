@@ -28,6 +28,11 @@ export default async function CompaniesPage() {
 
   return (
     <AppShell userName={session.user.name}>
+      <Card className="mb-5 border-blue-100 bg-blue-50">
+        <CardContent className="p-4 text-sm text-blue-950">
+          Use this page to create tenant companies, review owners, confirm subscription plans, open company details, and print/download onboarding PDFs.
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
