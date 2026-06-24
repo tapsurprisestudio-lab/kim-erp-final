@@ -5,7 +5,7 @@ import { z } from "zod";
 import { audit } from "@/lib/audit";
 import { createNotification, notifyPlatformAdmins } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenantPermission } from "@/lib/tenant";
 
 const ticketSchema = z.object({
   subject: z.string().trim().min(2),
@@ -14,7 +14,7 @@ const ticketSchema = z.object({
 });
 
 export async function createTenantSupportTicketAction(formData: FormData) {
-  const { session, companyId } = await requireTenant();
+  const { session, companyId } = await requireTenantPermission("company.dashboard.read");
   const parsed = ticketSchema.parse(Object.fromEntries(formData));
   const ticket = await prisma.supportTicket.create({
     data: {

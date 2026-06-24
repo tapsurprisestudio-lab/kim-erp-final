@@ -12,8 +12,13 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export default async function PlatformMessagesPage() {
+export default async function PlatformMessagesPage({
+  searchParams
+}: {
+  searchParams: Promise<{ sent?: string; error?: string }>;
+}) {
   const session = await requireSuperAdmin();
+  const query = await searchParams;
   const [companies, users, messages] = await Promise.all([
     prisma.company.findMany({ where: { deletedAt: null }, orderBy: { name: "asc" }, select: { id: true, name: true } }).catch((error) => {
       console.error("[platform-messages:companies-load-failed]", error);
@@ -33,6 +38,17 @@ export default async function PlatformMessagesPage() {
     <AppShell userName={session.user.name} scope="platform">
       <div className="space-y-6">
         <SectionHeader title="Platform Messages" description="Send reminders and operational messages to companies, owners, or users." icon={Send} />
+        {(query.sent || query.error) && (
+          <Card className={query.error ? "border-red-200 bg-red-50" : "border-emerald-200 bg-emerald-50"}>
+            <CardContent className={query.error ? "p-4 text-sm font-medium text-red-800" : "p-4 text-sm font-medium text-emerald-800"}>
+              {query.error === "no-target"
+                ? "No matching recipient was found. Select a company, owner group, all companies, or a tenant user."
+                : query.error
+                  ? "Message was not sent. Check the selected target and try again."
+                  : `Message delivered to ${query.sent} recipient${query.sent === "1" ? "" : "s"}.`}
+            </CardContent>
+          </Card>
+        )}
         <Card>
           <CardHeader>
             <CardTitle>Send message</CardTitle>

@@ -79,8 +79,13 @@ async function getCompanyMetrics(companyId: string) {
   }
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const session = await requireSession();
+  const query = await searchParams;
   const isPlatformUser = session.user.roles.includes("super_admin") || session.user.roles.includes("platform_admin");
   if (isPlatformUser) {
     redirect("/admin");
@@ -104,6 +109,13 @@ export default async function DashboardPage() {
   return (
     <AppShell userName={session.user.name} scope="tenant">
       <div className="space-y-6">
+        {query.error === "permission-denied" && (
+          <Card className="border-amber-200 bg-amber-50">
+            <CardContent className="p-4 text-sm font-medium text-amber-900">
+              {metrics.locale === "ar" ? "ليس لديك صلاحية للوصول إلى هذه الصفحة. تواصل مع مالك الشركة لتحديث صلاحياتك." : "Access denied. Ask the company owner to update your permissions if you need this module."}
+            </CardContent>
+          </Card>
+        )}
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
           <div>
             <h1 className="text-2xl font-bold tracking-normal text-slate-950">

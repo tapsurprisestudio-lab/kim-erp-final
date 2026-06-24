@@ -17,6 +17,60 @@ const employeeSchema = z.object({
 });
 
 const statusSchema = z.enum(["ACTIVE", "INVITED", "SUSPENDED", "DELETED"]);
+const roleSchema = z.object({
+  name: z.string().trim().min(2),
+  key: z.string().trim().min(2).optional()
+});
+
+const permissionKeyMap: Record<string, string> = {
+  "dashboard.view": "company.dashboard.read",
+  "customers.view": "customers.manage",
+  "customers.create": "customers.manage",
+  "customers.edit": "customers.manage",
+  "customers.delete": "customers.manage",
+  "customers.print": "customers.manage",
+  "customers.pdf": "customers.manage",
+  "sales.view": "sales.read",
+  "sales.create": "sales.read",
+  "sales.print": "sales.read",
+  "sales.pdf": "sales.read",
+  "products.view": "products.manage",
+  "products.create": "products.manage",
+  "products.edit": "products.manage",
+  "products.delete": "products.manage",
+  "inventory.view": "inventory.manage",
+  "inventory.create": "inventory.manage",
+  "inventory.edit": "inventory.manage",
+  "inventory.delete": "inventory.manage",
+  "purchases.view": "purchases.read",
+  "invoices.view": "invoices.manage",
+  "invoices.create": "invoices.manage",
+  "invoices.edit": "invoices.manage",
+  "invoices.delete": "invoices.manage",
+  "invoices.print": "invoices.manage",
+  "invoices.pdf": "invoices.manage",
+  "quotations.view": "quotations.manage",
+  "quotations.create": "quotations.manage",
+  "quotations.edit": "quotations.manage",
+  "quotations.delete": "quotations.manage",
+  "reports.view": "reports.read",
+  "reports.print": "reports.read",
+  "reports.pdf": "reports.read",
+  "payments.view": "payments.manage",
+  "payments.create": "payments.manage",
+  "accounting.view": "accounting.read",
+  "taxes.view": "accounting.read",
+  "documents.view": "reports.read",
+  "documents.pdf": "reports.read",
+  "settings.view": "settings.manage",
+  "settings.edit": "settings.manage",
+  "users.view": "employees.manage",
+  "users.create": "employees.manage",
+  "users.edit": "employees.manage",
+  "users.delete": "employees.manage",
+  "support.view": "company.dashboard.read",
+  "support.create": "company.dashboard.read"
+};
 
 async function nextUsername(base: string) {
   const clean = slugify(base).replaceAll("-", ".") || "user";
@@ -102,4 +156,52 @@ export async function resetEmployeePasswordAction(formData: FormData) {
   });
   await audit("employees.reset_password", "User", id, { companyId, userId: session.user.id });
   revalidatePath("/erp/employees");
+}
+
+export async function createTenantRoleAction(formData: FormData) {
+  const { session, companyId } = await requireTenantPermission("employees.manage");
+  const parsed = roleSchema.parse(Object.fromEntries(formData));
+  const key = slugify(parsed.key || parsed.name) || `custom-${Date.now()}`;
+  const role = await prisma.role.create({
+    data: {
+      companyId,
+      scope: "tenant",
+      name: parsed.name,
+      key,
+      system: false
+    }
+  });
+  await audit("roles.create", "Role", role.id, { companyId, userId: session.user.id });
+  revalidatePath("/erp/settings/users-permissions");
+  revalidatePath("/erp/employees");
+}
+
+export async function updateTenantRolePermissionsAction(formData: FormData) {
+  const { session, companyId } = await requireTenantPermission("employees.manage");
+  const roleId = z.string().min(1).parse(formData.get("roleId"));
+  const role = await prisma.role.findFirst({ where: { id: roleId, companyId } });
+  if (!role) {
+    return;
+  }
+  const selected = formData.getAll("permissions").map(String);
+  const permissionKeys = Array.from(new Set(selected.map((key) => permissionKeyMap[key]).filter(Boolean)));
+  const permissions = await prisma.permission.findMany({ where: { key: { in: permissionKeys } } });
+  await prisma.rolePermission.deleteMany({ where: { roleId } });
+  if (permissions.length > 0) {
+    await prisma.rolePermission.createMany({
+      data: permissions.map((permission) => ({ roleId, permissionId: permission.id })),
+      skipDuplicates: true
+    });
+  }
+  await audit("roles.permissions_update", "Role", roleId, {
+    companyId,
+    userId: session.user.id,
+    metadata: { permissions: permissionKeys }
+  });
+  await securityLog("PERMISSION_CHANGED", "Tenant role permissions changed", {
+    companyId,
+    userId: session.user.id,
+    metadata: { roleId, permissions: permissionKeys }
+  });
+  revalidatePath("/erp/settings/users-permissions");
 }

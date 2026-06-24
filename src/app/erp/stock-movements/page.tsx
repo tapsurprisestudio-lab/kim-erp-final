@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { createStockMovementAction, deleteStockMovementAction } from "@/app/erp/stock-movements/actions";
+import { normalizeLocale } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
 import { requireTenantPermission } from "@/lib/tenant";
 
@@ -15,7 +16,8 @@ const movementTypes = ["ADJUSTMENT", "PURCHASE", "SALE", "TRANSFER", "RETURN"];
 
 export default async function StockMovementsPage() {
   const { session, companyId } = await requireTenantPermission("stock_movements.manage");
-  const [movements, products, warehouses] = await Promise.all([
+  const [company, movements, products, warehouses] = await Promise.all([
+    prisma.company.findUnique({ where: { id: companyId }, select: { defaultLanguage: true } }),
     prisma.stockMovement.findMany({
       where: { companyId, deletedAt: null },
       include: { product: true, warehouse: true },
@@ -25,13 +27,14 @@ export default async function StockMovementsPage() {
     prisma.product.findMany({ where: { companyId, deletedAt: null, active: true }, orderBy: { name: "asc" } }),
     prisma.warehouse.findMany({ where: { companyId, deletedAt: null, active: true }, orderBy: { name: "asc" } })
   ]);
+  const isAr = normalizeLocale(company?.defaultLanguage) === "ar";
 
   return (
     <AppShell userName={session.user.name} scope="tenant">
-      <SectionHeader title="Stock Movements" description="Record purchases, sales, returns, transfers, and adjustments." icon={Activity} />
+      <SectionHeader title={isAr ? "حركات المخزون" : "Stock Movements"} description={isAr ? "سجل المشتريات والمبيعات والمرتجعات والتحويلات والتسويات." : "Record purchases, sales, returns, transfers, and adjustments."} icon={Activity} />
       <Card className="mb-5">
         <CardHeader>
-          <CardTitle>Record Movement</CardTitle>
+          <CardTitle>{isAr ? "تسجيل حركة" : "Record Movement"}</CardTitle>
         </CardHeader>
         <CardContent>
           <form action={createStockMovementAction} className="grid gap-3 lg:grid-cols-3">
@@ -57,10 +60,10 @@ export default async function StockMovementsPage() {
               ))}
             </select>
             <Input name="quantity" type="number" step="0.001" placeholder="10" required />
-            <Input name="reference" placeholder="PO-1001" />
-            <Input name="note" placeholder="Notes" />
+            <Input name="reference" placeholder={isAr ? "مرجع مثل PO-1001" : "PO-1001"} />
+            <Input name="note" placeholder={isAr ? "ملاحظات" : "Notes"} />
             <div className="lg:col-span-3">
-              <Button type="submit">Record Movement</Button>
+              <Button type="submit">{isAr ? "تسجيل الحركة" : "Record Movement"}</Button>
             </div>
           </form>
         </CardContent>
@@ -70,13 +73,13 @@ export default async function StockMovementsPage() {
           <table className="w-full min-w-[860px] text-left text-sm">
             <thead className="border-b text-xs uppercase text-slate-400">
               <tr>
-                <th className="px-5 py-3">Type</th>
-                <th className="px-5 py-3">Product</th>
-                <th className="px-5 py-3">Warehouse</th>
-                <th className="px-5 py-3">Quantity</th>
-                <th className="px-5 py-3">Reference</th>
-                <th className="px-5 py-3">Time</th>
-                <th className="px-5 py-3 text-right">Delete</th>
+                <th className="px-5 py-3">{isAr ? "النوع" : "Type"}</th>
+                <th className="px-5 py-3">{isAr ? "المنتج" : "Product"}</th>
+                <th className="px-5 py-3">{isAr ? "المستودع" : "Warehouse"}</th>
+                <th className="px-5 py-3">{isAr ? "الكمية" : "Quantity"}</th>
+                <th className="px-5 py-3">{isAr ? "المرجع" : "Reference"}</th>
+                <th className="px-5 py-3">{isAr ? "الوقت" : "Time"}</th>
+                <th className="px-5 py-3 text-right">{isAr ? "حذف" : "Delete"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -95,7 +98,7 @@ export default async function StockMovementsPage() {
                       <input type="hidden" name="id" value={movement.id} />
                       <Button type="submit" size="sm" variant="outline">
                         <Trash2 className="size-4" />
-                        Delete
+                        {isAr ? "حذف" : "Delete"}
                       </Button>
                     </form>
                   </td>

@@ -7,52 +7,57 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { createTenantSupportTicketAction } from "@/app/erp/support/actions";
+import { normalizeLocale } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenantPermission } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
 
 export default async function TenantSupportPage() {
-  const { session, companyId } = await requireTenant();
-  const tickets = await prisma.supportTicket.findMany({
+  const { session, companyId } = await requireTenantPermission("company.dashboard.read");
+  const [company, tickets] = await Promise.all([
+    prisma.company.findUnique({ where: { id: companyId }, select: { defaultLanguage: true } }),
+    prisma.supportTicket.findMany({
     where: { companyId },
     include: { replies: { include: { user: true }, orderBy: { createdAt: "desc" }, take: 1 } },
     orderBy: { createdAt: "desc" },
     take: 100
-  });
+    })
+  ]);
+  const isAr = normalizeLocale(company?.defaultLanguage) === "ar";
 
   return (
     <AppShell userName={session.user.name} scope="tenant">
       <div className="space-y-6">
-        <SectionHeader title="Help / Support" description="Create and track support tickets for this company." icon={Headphones} />
+        <SectionHeader title={isAr ? "المساعدة والدعم" : "Help / Support"} description={isAr ? "أنشئ وتابع تذاكر الدعم الخاصة بالشركة." : "Create and track support tickets for this company."} icon={Headphones} />
         <Card className="border-blue-100 bg-blue-50">
           <CardContent className="p-4 text-sm text-blue-950">
-            Need help? Create a ticket with a clear subject and priority. KIM-ERB support replies here, and you will receive a notification when the ticket is updated.
+            {isAr ? "تحتاج مساعدة؟ أنشئ تذكرة بعنوان واضح وأولوية مناسبة. سيرد دعم KIM-ERB هنا وستصلك إشعار عند التحديث." : "Need help? Create a ticket with a clear subject and priority. KIM-ERB support replies here, and you will receive a notification when the ticket is updated."}
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Create ticket</CardTitle>
+            <CardTitle>{isAr ? "إنشاء تذكرة" : "Create ticket"}</CardTitle>
           </CardHeader>
           <CardContent>
             <form action={createTenantSupportTicketAction} className="grid gap-3 lg:grid-cols-4">
-              <Input name="subject" placeholder="Subject" required />
+              <Input name="subject" placeholder={isAr ? "الموضوع" : "Subject"} required />
               <select name="priority" className="h-10 rounded-lg border border-input bg-white px-3 text-sm">
-                <option value="normal">Normal</option>
-                <option value="low">Low</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
+                <option value="normal">{isAr ? "عادي" : "Normal"}</option>
+                <option value="low">{isAr ? "منخفض" : "Low"}</option>
+                <option value="high">{isAr ? "مرتفع" : "High"}</option>
+                <option value="urgent">{isAr ? "عاجل" : "Urgent"}</option>
               </select>
-              <Input name="message" className="lg:col-span-2" placeholder="Message" required />
+              <Input name="message" className="lg:col-span-2" placeholder={isAr ? "الرسالة" : "Message"} required />
               <Button type="submit" className="lg:col-span-4">
                 <Plus className="size-4" />
-                Create Ticket
+                {isAr ? "إنشاء التذكرة" : "Create Ticket"}
               </Button>
             </form>
           </CardContent>
         </Card>
         <DataTable
-          headers={["Subject", "Priority", "Status", "Latest Reply", "Created"]}
+          headers={isAr ? ["الموضوع", "الأولوية", "الحالة", "آخر رد", "تاريخ الإنشاء"] : ["Subject", "Priority", "Status", "Latest Reply", "Created"]}
           rows={tickets.map((ticket) => [
             ticket.subject,
             ticket.priority,

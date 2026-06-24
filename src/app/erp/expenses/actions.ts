@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { audit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenantPermission } from "@/lib/tenant";
 
 const expenseSchema = z.object({
   supplierId: z.string().optional(),
@@ -16,7 +16,7 @@ const expenseSchema = z.object({
 });
 
 export async function createExpenseAction(formData: FormData) {
-  const { session, companyId } = await requireTenant();
+  const { session, companyId } = await requireTenantPermission("expenses.manage");
   const parsed = expenseSchema.parse(Object.fromEntries(formData));
   const supplierId = parsed.supplierId || null;
   if (supplierId) {
@@ -41,7 +41,7 @@ export async function createExpenseAction(formData: FormData) {
 }
 
 export async function deleteExpenseAction(formData: FormData) {
-  const { session, companyId } = await requireTenant();
+  const { session, companyId } = await requireTenantPermission("expenses.manage");
   const id = z.string().min(1).parse(formData.get("id"));
   await prisma.expense.updateMany({ where: { id, companyId }, data: { deletedAt: new Date() } });
   await audit("expenses.delete", "Expense", id, { companyId, userId: session.user.id });

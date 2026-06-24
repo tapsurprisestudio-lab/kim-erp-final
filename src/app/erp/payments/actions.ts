@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { audit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenantPermission } from "@/lib/tenant";
 
 const paymentSchema = z.object({
   invoiceId: z.string().optional(),
@@ -15,7 +15,7 @@ const paymentSchema = z.object({
 });
 
 export async function createPaymentAction(formData: FormData) {
-  const { session, companyId } = await requireTenant();
+  const { session, companyId } = await requireTenantPermission("payments.manage");
   const parsed = paymentSchema.parse(Object.fromEntries(formData));
   const invoiceId = parsed.invoiceId || null;
   if (invoiceId) {

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { audit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenantPermission } from "@/lib/tenant";
 
 const supplierSchema = z.object({
   name: z.string().trim().min(2),
@@ -15,7 +15,7 @@ const supplierSchema = z.object({
 });
 
 export async function createSupplierAction(formData: FormData) {
-  const { session, companyId } = await requireTenant();
+  const { session, companyId } = await requireTenantPermission("suppliers.manage");
   const parsed = supplierSchema.parse(Object.fromEntries(formData));
   const supplier = await prisma.supplier.create({
     data: {
@@ -32,7 +32,7 @@ export async function createSupplierAction(formData: FormData) {
 }
 
 export async function deleteSupplierAction(formData: FormData) {
-  const { session, companyId } = await requireTenant();
+  const { session, companyId } = await requireTenantPermission("suppliers.manage");
   const id = z.string().min(1).parse(formData.get("id"));
   await prisma.supplier.updateMany({ where: { id, companyId }, data: { deletedAt: new Date() } });
   await audit("suppliers.delete", "Supplier", id, { companyId, userId: session.user.id });

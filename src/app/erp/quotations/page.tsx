@@ -6,35 +6,38 @@ import { MetricGrid } from "@/components/app/metric-grid";
 import { SectionHeader } from "@/components/app/section-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { normalizeLocale } from "@/lib/i18n";
 import { prisma } from "@/lib/prisma";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenantPermission } from "@/lib/tenant";
 import { formatMoney } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export default async function QuotationsPage() {
-  const { session, companyId } = await requireTenant();
-  const [quotations, totals, sentCount, draftCount] = await Promise.all([
+  const { session, companyId } = await requireTenantPermission("quotations.manage");
+  const [company, quotations, totals, sentCount, draftCount] = await Promise.all([
+    prisma.company.findUnique({ where: { id: companyId }, select: { defaultLanguage: true } }),
     prisma.quotation.findMany({ where: { companyId, deletedAt: null }, include: { customer: true, _count: { select: { items: true } } }, orderBy: { issueDate: "desc" }, take: 100 }),
     prisma.quotation.aggregate({ where: { companyId, deletedAt: null }, _sum: { total: true }, _count: true }),
     prisma.quotation.count({ where: { companyId, deletedAt: null, status: "SENT" } }),
     prisma.quotation.count({ where: { companyId, deletedAt: null, status: "DRAFT" } })
   ]);
+  const isAr = normalizeLocale(company?.defaultLanguage) === "ar";
 
   return (
     <AppShell userName={session.user.name} scope="tenant">
       <div className="space-y-6">
-        <SectionHeader title="Quotations" description="Customer offers and pre-sales document tracking." icon={ClipboardList} />
+        <SectionHeader title={isAr ? "عروض الأسعار" : "Quotations"} description={isAr ? "عروض العملاء وتتبع مستندات ما قبل البيع." : "Customer offers and pre-sales document tracking."} icon={ClipboardList} />
         <MetricGrid
           metrics={[
-            { label: "Quotations", value: totals._count.toLocaleString(), icon: ClipboardList, detail: "Active records" },
-            { label: "Quoted Value", value: formatMoney(Number(totals._sum.total ?? 0), "LYD"), icon: ClipboardList, detail: "Pipeline estimate" },
-            { label: "Sent", value: sentCount.toLocaleString(), icon: ClipboardList, detail: "Customer-facing offers" },
-            { label: "Drafts", value: draftCount.toLocaleString(), icon: ClipboardList, detail: "In preparation" }
+            { label: isAr ? "العروض" : "Quotations", value: totals._count.toLocaleString(), icon: ClipboardList, detail: isAr ? "سجلات نشطة" : "Active records" },
+            { label: isAr ? "قيمة العروض" : "Quoted Value", value: formatMoney(Number(totals._sum.total ?? 0), "LYD"), icon: ClipboardList, detail: isAr ? "تقدير المبيعات" : "Pipeline estimate" },
+            { label: isAr ? "مرسلة" : "Sent", value: sentCount.toLocaleString(), icon: ClipboardList, detail: isAr ? "عروض للعملاء" : "Customer-facing offers" },
+            { label: isAr ? "مسودات" : "Drafts", value: draftCount.toLocaleString(), icon: ClipboardList, detail: isAr ? "قيد الإعداد" : "In preparation" }
           ]}
         />
         <DataTable
-          headers={["Number", "Customer", "Issue Date", "Expires", "Total", "Status", "Lines", "PDF"]}
+          headers={isAr ? ["الرقم", "العميل", "تاريخ الإصدار", "ينتهي في", "الإجمالي", "الحالة", "البنود", "PDF"] : ["Number", "Customer", "Issue Date", "Expires", "Total", "Status", "Lines", "PDF"]}
           rows={quotations.map((quotation) => [
             quotation.number,
             quotation.customer?.name ?? "-",
